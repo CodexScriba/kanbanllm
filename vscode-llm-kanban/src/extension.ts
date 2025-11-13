@@ -1,26 +1,71 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
+/**
+ * LLM Kanban Extension
+ * File-based Kanban board for managing LLM-assisted development tasks
+ */
+
 import * as vscode from 'vscode';
+import { initWorkspace } from './commands/init-workspace';
+import { createTask } from './commands/create-task';
+import { createPhase } from './commands/create-phase';
+import { moveTask } from './commands/move-task';
+import { copyWithContext } from './commands/copy-with-context';
+import { registerKanbanTreeView } from './providers/kanban-tree-provider';
+import { getWorkspaceRoot, isWorkspaceOpen, getConfig } from './utils/workspace';
+import { watchKanbanFolder } from './utils/file-watcher';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
+/**
+ * Extension activation
+ */
 export function activate(context: vscode.ExtensionContext) {
+	console.log('LLM Kanban extension is now active');
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "vscode-llm-kanban" is now active!');
+	// Check if workspace is open
+	if (!isWorkspaceOpen()) {
+		console.log('No workspace open, waiting for workspace to open');
+		return;
+	}
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('vscode-llm-kanban.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from llm-kanban!');
-	});
+	const workspaceRoot = getWorkspaceRoot();
 
-	context.subscriptions.push(disposable);
+	// Register tree view provider
+	const treeProvider = registerKanbanTreeView(context, workspaceRoot);
+
+	// Register commands
+	context.subscriptions.push(
+		vscode.commands.registerCommand('llmkanban.init', () => initWorkspace(context))
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('llmkanban.createTask', createTask)
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('llmkanban.createPhase', createPhase)
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('llmkanban.moveTask', (itemId?: string) => moveTask(itemId))
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('llmkanban.copyWithContext', (itemId?: string) => copyWithContext(itemId))
+	);
+
+	// Set up file watcher if enabled
+	const enableFileWatcher = getConfig<boolean>('enableFileWatcher', true);
+	if (enableFileWatcher) {
+		const watcher = watchKanbanFolder(workspaceRoot, () => {
+			treeProvider.refresh();
+		});
+		context.subscriptions.push(watcher);
+	}
+
+	console.log('LLM Kanban extension activated successfully');
 }
 
-// This method is called when your extension is deactivated
-export function deactivate() {}
+/**
+ * Extension deactivation
+ */
+export function deactivate() {
+	console.log('LLM Kanban extension deactivated');
+}

@@ -1,71 +1,285 @@
-# vscode-llm-kanban README
+# LLM Kanban - VSCode Extension
 
-This is the README for your extension "vscode-llm-kanban". After writing up a brief description, we recommend including the following sections.
+A file-based Kanban board extension for managing LLM-assisted development tasks. Perfect for developers working with AI coding assistants like Claude Code, GitHub Copilot, and other LLMs.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+### 🗂️ File-Based Task Management
+- All tasks stored as markdown files in `.llmkanban/` folder
+- Git-friendly with clean diffs
+- No external database or server required
+- Full version control for your task history
 
-For example if there is an image subfolder under your extension project workspace:
+### 📋 5-Stage Kanban Workflow
+- **Backlog**: Planned tasks and ideas
+- **In Progress**: Active development work
+- **Review**: Code review and feedback
+- **Audit**: Security, performance, and compliance checks
+- **Completed**: Finished work for reference
 
-\!\[feature X\]\(images/feature-x.png\)
+### 🎯 Context Injection
+- Automatic stage context injection when tasks move between stages
+- Phase context for grouping related tasks
+- Preserves user content while updating metadata
+- Perfect for providing context to LLM assistants
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+### 📝 Copy with Context
+Copy tasks to clipboard with different levels of context:
+- **Full Document**: Frontmatter + Managed Section + User Content
+- **Context + Content**: Managed Section + User Content (no frontmatter)
+- **User Content Only**: Just your notes
 
-## Requirements
+### 🌳 Tree View Sidebar
+- Visual organization by stage
+- Click to open task files
+- Context menu for quick actions
+- Auto-refresh on file changes
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+### ⚡ Quick Commands
+- Create tasks and phases
+- Move tasks between stages
+- Copy with context for LLM prompts
+- Refresh board view
 
-## Extension Settings
+## Installation
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+### From Source
+1. Clone this repository
+2. Run `npm install` in the `vscode-llm-kanban` directory
+3. Run `npm run compile` to build
+4. Press F5 to open a new VSCode window with the extension loaded
 
-For example:
+### From VSIX (Future)
+- Download the `.vsix` file from releases
+- Install via `Extensions: Install from VSIX` command
 
-This extension contributes the following settings:
+## Getting Started
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+### 1. Initialize Workspace
+Open the command palette (`Cmd+Shift+P` or `Ctrl+Shift+P`) and run:
+```
+LLM Kanban: Initialize Workspace
+```
 
-## Known Issues
+This creates the `.llmkanban/` folder structure:
+```
+.llmkanban/
+├── _context/
+│   ├── architecture.md
+│   ├── design.md
+│   ├── stages/
+│   │   ├── backlog.md
+│   │   ├── in-progress.md
+│   │   ├── review.md
+│   │   ├── audit.md
+│   │   └── completed.md
+│   └── phases/
+├── backlog/
+├── in-progress/
+├── review/
+├── audit/
+└── completed/
+```
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+### 2. Customize Context Files
+Edit the context files in `.llmkanban/_context/` to match your project:
+- **architecture.md**: System design and architecture decisions
+- **design.md**: UI/UX guidelines and design system
+- **stages/*.md**: Stage-specific guidelines
 
-## Release Notes
+### 3. Create a Phase
+Phases group related tasks (like sprints or features):
+```
+LLM Kanban: Create Phase
+```
 
-Users appreciate release notes as you update your extension.
+Example: "Core MVP", "UI Redesign", "Performance Optimization"
 
-### 1.0.0
+### 4. Create Tasks
+Create tasks within phases:
+```
+LLM Kanban: Create Task
+```
 
-Initial release of ...
+Tasks automatically start in the Backlog stage.
 
-### 1.0.1
+### 5. Move Tasks
+Drag tasks between stages using the tree view, or use:
+```
+LLM Kanban: Move Task
+```
 
-Fixed issue #.
+Context is automatically re-injected when moving stages!
 
-### 1.1.0
+### 6. Copy with Context
+Right-click a task and select "Copy with Context" to copy task details optimized for LLM prompts.
 
-Added features X, Y, and Z.
+## Usage with LLMs
+
+### Example Workflow
+
+1. **Create a task** for a feature you want to build
+2. **Add notes** in the user content section about requirements
+3. **Copy with context** (Context + Content mode)
+4. **Paste into Claude Code** or your LLM assistant
+5. The LLM receives:
+   - Current stage context (e.g., "In Progress")
+   - Phase context (e.g., "Core MVP goals and timeline")
+   - Your specific notes and requirements
+
+The LLM now has full context about:
+- What stage the work is in
+- The broader phase goals
+- Your specific requirements
+- Project architecture and design patterns
+
+### Example Copied Context
+
+```markdown
+## ⚡ In Progress
+
+This stage represents active work that is currently being implemented.
+
+**Guidelines:**
+- Focus on one task at a time
+- Update progress regularly
+- Move to Review when ready for feedback
+
+## 📦 Phase: Core MVP
+
+This phase focuses on building the foundational features.
+
+**Goals:**
+- User authentication
+- Basic CRUD operations
+- Responsive UI
 
 ---
 
-## Following extension guidelines
+## Implementation Notes
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+Build a navigation bar component with the following:
+- Logo on the left
+- Main navigation links in center
+- User profile dropdown on right
+- Mobile responsive (hamburger menu)
+```
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
+## File Format
 
-## Working with Markdown
+Each task/phase is a markdown file with YAML frontmatter:
 
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
+```markdown
+---
+id: phase1-task2-navbar-d9e3
+type: task
+title: "Build navigation bar"
+stage: in-progress
+phase: phase1-core-mvp-a3f2
+created: 2025-11-11T10:00:00Z
+updated: 2025-11-11T14:30:00Z
+tags: [ui, react]
+---
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
+<!-- DOCFLOW:MANAGED - Do not edit above the separator -->
 
-## For more information
+## ⚡ Stage: In Progress
+[Auto-injected stage context]
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+## 📦 Phase: Core MVP
+[Auto-injected phase context]
 
-**Enjoy!**
+---
+<!-- DOCFLOW:USER-CONTENT - Edit below this line -->
+
+## Implementation Notes
+[Your notes here - never touched by automation]
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `LLM Kanban: Initialize Workspace` | Create `.llmkanban/` folder structure |
+| `LLM Kanban: Create Task` | Create a new task |
+| `LLM Kanban: Create Phase` | Create a new phase |
+| `LLM Kanban: Move Task` | Move task to different stage |
+| `LLM Kanban: Copy with Context` | Copy task with stage/phase context |
+| `LLM Kanban: Refresh Board` | Refresh tree view |
+
+## Configuration
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `llmkanban.defaultStage` | `backlog` | Default stage for new tasks |
+| `llmkanban.enableFileWatcher` | `true` | Auto-refresh on file changes |
+
+## Architecture
+
+The extension is built with:
+- **TypeScript** for type safety
+- **Zod** for runtime validation
+- **gray-matter** for YAML frontmatter parsing
+- **VSCode Extension API** for UI and commands
+
+Core components:
+- **Parser**: Markdown parsing and serialization
+- **FS Adapter**: File system operations with path validation
+- **Context Injector**: Stage and phase context management
+- **Tree Provider**: Sidebar tree view
+- **Commands**: User-facing actions
+
+## Philosophy
+
+### Files are the Database
+No external storage. Everything is in git-tracked markdown files.
+
+### Context Preservation
+Auto-inject stage/phase context, but NEVER touch user content.
+
+### Manual Control
+You orchestrate, the extension assists. No automatic task progression.
+
+### Repository-Scoped
+Each repo has its own `.llmkanban/` folder. Switch projects, switch boards.
+
+## Roadmap
+
+**Phase 1** (Completed):
+- ✅ Core infrastructure
+- ✅ Tree view sidebar
+- ✅ Basic commands (create, move, copy)
+- ✅ Context injection
+
+**Phase 2** (Future):
+- 🔲 Webview Kanban board with drag-and-drop
+- 🔲 Search and filter
+- 🔲 Bulk operations
+- 🔲 Analytics and time tracking
+
+## Contributing
+
+Contributions welcome! This project is based on lessons learned from DocFlow.
+
+Key areas for contribution:
+- Webview Kanban board implementation
+- Additional export formats
+- Integration with other LLM tools
+- Performance optimizations
+
+## License
+
+MIT License - See LICENSE file for details
+
+## Credits
+
+Inspired by and ported from the DocFlow project. Built specifically for LLM-assisted development workflows.
+
+## Support
+
+- [GitHub Issues](https://github.com/your-repo/issues)
+- [Documentation](https://github.com/your-repo/wiki)
+
+---
+
+**Happy coding with your AI assistant!** 🚀

@@ -1,23 +1,103 @@
 {
   "name": "vscode-llm-kanban",
-  "displayName": "llm-kanban",
-  "description": "File-based kanban board for llm-assisted evelopment",
-  "version": "0.0.1",
+  "displayName": "LLM Kanban",
+  "description": "File-based Kanban board for managing LLM-assisted development tasks",
+  "version": "0.1.0",
+  "publisher": "your-publisher-name",
   "engines": {
     "vscode": "^1.106.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Project Management"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "workspaceContains:.llmkanban"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "vscode-llm-kanban.helloWorld",
-        "title": "Hello World"
+        "command": "llmkanban.init",
+        "title": "LLM Kanban: Initialize Workspace"
+      },
+      {
+        "command": "llmkanban.createTask",
+        "title": "LLM Kanban: Create Task"
+      },
+      {
+        "command": "llmkanban.createPhase",
+        "title": "LLM Kanban: Create Phase"
+      },
+      {
+        "command": "llmkanban.moveTask",
+        "title": "LLM Kanban: Move Task"
+      },
+      {
+        "command": "llmkanban.copyWithContext",
+        "title": "LLM Kanban: Copy with Context"
+      },
+      {
+        "command": "llmkanban.refreshBoard",
+        "title": "LLM Kanban: Refresh Board",
+        "icon": "$(refresh)"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "llmkanban",
+          "title": "LLM Kanban",
+          "icon": "$(checklist)"
+        }
+      ]
+    },
+    "views": {
+      "llmkanban": [
+        {
+          "id": "llmkanban.treeView",
+          "name": "Tasks"
+        }
+      ]
+    },
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "llmkanban.moveTask",
+          "when": "view == llmkanban.treeView && viewItem == task"
+        },
+        {
+          "command": "llmkanban.copyWithContext",
+          "when": "view == llmkanban.treeView"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "llmkanban.copyWithContext",
+          "when": "resourcePath =~ /\\.llmkanban\\/.*\\.md$/"
+        },
+        {
+          "command": "llmkanban.moveTask",
+          "when": "resourcePath =~ /\\.llmkanban\\/.*\\.md$/"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "LLM Kanban",
+      "properties": {
+        "llmkanban.defaultStage": {
+          "type": "string",
+          "default": "backlog",
+          "enum": ["backlog", "in-progress", "review", "audit", "completed"],
+          "description": "Default stage for new tasks"
+        },
+        "llmkanban.enableFileWatcher": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic refresh on file changes"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
@@ -42,5 +122,10 @@
     "webpack-cli": "^6.0.1",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "zod": "^4.1.12",
+    "date-fns": "^4.1.0"
   }
 }
