@@ -1,0 +1,39 @@
+{
+  "name": "kanbanllm-sample-column-extension",
+  "displayName": "KanbanLLM Sample Column Extension",
+  "description": "A minimal example VS Code extension that opens a column with a button which writes 'you click a button' into the same view.",
+  "version": "0.0.1",
+  "publisher": "your-name-or-org",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onCommand:kanbanllm.openSampleColumn"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "kanbanllm.openSampleColumn",
+        "title": "Open Sample Column"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./tsconfig.json",
+    "watch": "tsc -watch -p ./tsconfig.json",
+    "lint": "eslint src --ext .ts",
+    "vscode:prepublish": "bun run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/vscode": "^1.90.0",
+    "eslint": "^9.39.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {}
+}

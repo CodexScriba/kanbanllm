@@ -1,0 +1,11 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "npm: compile",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/vscode-extension && bun run compile",
+      "problemMatcher": "$tsc"
+    }
+  ]
+}
