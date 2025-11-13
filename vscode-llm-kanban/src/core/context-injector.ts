@@ -4,6 +4,7 @@
  */
 
 import * as fs from 'fs/promises';
+import * as path from 'path';
 import { Item, Stage } from './types';
 import { getStageContextPath, getPhaseContextPath } from './fs-adapter';
 import { buildManagedSection } from './parser';
@@ -154,10 +155,8 @@ export async function savePhaseContext(
   content: string
 ): Promise<void> {
   const contextPath = getPhaseContextPath(workspaceRoot, phaseId);
-  const { mkdir, writeFile } = await import('fs/promises');
-  const path = await import('path');
 
   // Ensure directory exists
-  await mkdir(path.dirname(contextPath), { recursive: true });
-  await writeFile(contextPath, content, 'utf-8');
+  await fs.mkdir(path.dirname(contextPath), { recursive: true });
+  await fs.writeFile(contextPath, content, 'utf-8');
 }

@@ -38,6 +38,11 @@
         "title": "LLM Kanban: Copy with Context"
       },
       {
+        "command": "llmkanban.openBoard",
+        "title": "LLM Kanban: Open Board",
+        "icon": "$(kanban)"
+      },
+      {
         "command": "llmkanban.refreshBoard",
         "title": "LLM Kanban: Refresh Board",
         "icon": "$(refresh)"
@@ -54,6 +59,11 @@
     },
     "views": {
       "llmkanban": [
+        {
+          "type": "webview",
+          "id": "llmkanban.boardView",
+          "name": "Board"
+        },
         {
           "id": "llmkanban.treeView",
           "name": "Tasks"
@@ -126,6 +136,28 @@
   "dependencies": {
     "gray-matter": "^4.0.3",
     "zod": "^4.1.12",
-    "date-fns": "^4.1.0"
+    "date-fns": "^4.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.106.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript-eslint": "^8.46.3",
+    "eslint": "^9.39.1",
+    "typescript": "^5.9.3",
+    "ts-loader": "^9.5.4",
+    "style-loader": "^4.0.0",
+    "css-loader": "^7.1.2",
+    "webpack": "^5.102.1",
+    "webpack-cli": "^6.0.1",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2"
   }
 }

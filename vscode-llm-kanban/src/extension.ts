@@ -9,7 +9,9 @@ import { createTask } from './commands/create-task';
 import { createPhase } from './commands/create-phase';
 import { moveTask } from './commands/move-task';
 import { copyWithContext } from './commands/copy-with-context';
+import { openBoard } from './commands/open-board';
 import { registerKanbanTreeView } from './providers/kanban-tree-provider';
+import { registerKanbanWebview } from './providers/kanban-webview-provider';
 import { getWorkspaceRoot, isWorkspaceOpen, getConfig } from './utils/workspace';
 import { watchKanbanFolder } from './utils/file-watcher';
 
@@ -29,6 +31,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Register tree view provider
 	const treeProvider = registerKanbanTreeView(context, workspaceRoot);
+
+	// Register webview provider
+	const webviewProvider = registerKanbanWebview(context, workspaceRoot);
 
 	// Register commands
 	context.subscriptions.push(
@@ -51,11 +56,16 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('llmkanban.copyWithContext', (itemId?: string) => copyWithContext(itemId))
 	);
 
+	context.subscriptions.push(
+		vscode.commands.registerCommand('llmkanban.openBoard', openBoard)
+	);
+
 	// Set up file watcher if enabled
 	const enableFileWatcher = getConfig<boolean>('enableFileWatcher', true);
 	if (enableFileWatcher) {
 		const watcher = watchKanbanFolder(workspaceRoot, () => {
 			treeProvider.refresh();
+			webviewProvider.refresh();
 		});
 		context.subscriptions.push(watcher);
 	}

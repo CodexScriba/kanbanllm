@@ -10,6 +10,13 @@ A file-based Kanban board extension for managing LLM-assisted development tasks.
 - No external database or server required
 - Full version control for your task history
 
+### 📊 Visual Drag-and-Drop Kanban Board
+- **Webview board** with interactive drag-and-drop interface
+- Real-time updates when files change
+- Move tasks between stages by dragging cards
+- Create tasks and phases directly from the board
+- Beautiful, responsive design that adapts to VSCode themes
+
 ### 📋 5-Stage Kanban Workflow
 - **Backlog**: Planned tasks and ideas
 - **In Progress**: Active development work
@@ -36,10 +43,12 @@ Copy tasks to clipboard with different levels of context:
 - Auto-refresh on file changes
 
 ### ⚡ Quick Commands
+- Initialize workspace
 - Create tasks and phases
 - Move tasks between stages
 - Copy with context for LLM prompts
-- Refresh board view
+- Open visual Kanban board
+- Refresh views
 
 ## Installation
 
@@ -81,13 +90,21 @@ This creates the `.llmkanban/` folder structure:
 └── completed/
 ```
 
-### 2. Customize Context Files
+### 2. Open the Kanban Board
+Run command:
+```
+LLM Kanban: Open Board
+```
+
+Or click on the LLM Kanban icon in the Activity Bar and view the "Board" panel at the top of the sidebar.
+
+### 3. Customize Context Files
 Edit the context files in `.llmkanban/_context/` to match your project:
 - **architecture.md**: System design and architecture decisions
 - **design.md**: UI/UX guidelines and design system
 - **stages/*.md**: Stage-specific guidelines
 
-### 3. Create a Phase
+### 4. Create a Phase
 Phases group related tasks (like sprints or features):
 ```
 LLM Kanban: Create Phase
@@ -95,7 +112,7 @@ LLM Kanban: Create Phase
 
 Example: "Core MVP", "UI Redesign", "Performance Optimization"
 
-### 4. Create Tasks
+### 5. Create Tasks
 Create tasks within phases:
 ```
 LLM Kanban: Create Task
@@ -103,15 +120,18 @@ LLM Kanban: Create Task
 
 Tasks automatically start in the Backlog stage.
 
-### 5. Move Tasks
-Drag tasks between stages using the tree view, or use:
-```
-LLM Kanban: Move Task
-```
+### 6. Move Tasks
+**Visual Method (Webview):**
+- Open the board with `LLM Kanban: Open Board`
+- Drag and drop cards between columns
+- Context is automatically re-injected!
 
-Context is automatically re-injected when moving stages!
+**Command Method:**
+- Select a task in the tree view or open its file
+- Run `LLM Kanban: Move Task`
+- Choose the target stage
 
-### 6. Copy with Context
+### 7. Copy with Context
 Right-click a task and select "Copy with Context" to copy task details optimized for LLM prompts.
 
 ## Usage with LLMs
@@ -198,35 +218,53 @@ tags: [ui, react]
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `LLM Kanban: Initialize Workspace` | Create `.llmkanban/` folder structure |
-| `LLM Kanban: Create Task` | Create a new task |
-| `LLM Kanban: Create Phase` | Create a new phase |
-| `LLM Kanban: Move Task` | Move task to different stage |
-| `LLM Kanban: Copy with Context` | Copy task with stage/phase context |
-| `LLM Kanban: Refresh Board` | Refresh tree view |
+| Command | Description | Keyboard Shortcut |
+|---------|-------------|-------------------|
+| `LLM Kanban: Initialize Workspace` | Create `.llmkanban/` folder structure | - |
+| `LLM Kanban: Open Board` | Open visual drag-and-drop Kanban board | - |
+| `LLM Kanban: Create Task` | Create a new task | - |
+| `LLM Kanban: Create Phase` | Create a new phase | - |
+| `LLM Kanban: Move Task` | Move task to different stage | - |
+| `LLM Kanban: Copy with Context` | Copy task with stage/phase context | - |
+| `LLM Kanban: Refresh Board` | Refresh tree view and webview | - |
+
+> **Note:** Keyboard shortcuts can be customized in VSCode's Keyboard Shortcuts settings (`Cmd+K Cmd+S` or `Ctrl+K Ctrl+S`)
 
 ## Configuration
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `llmkanban.defaultStage` | `backlog` | Default stage for new tasks |
-| `llmkanban.enableFileWatcher` | `true` | Auto-refresh on file changes |
+| `llmkanban.defaultStage` | `backlog` | Default stage for new tasks. Options: `backlog`, `in-progress`, `review`, `audit`, `completed` |
+| `llmkanban.enableFileWatcher` | `true` | Enable automatic refresh on file changes |
+
+> **Future Configuration Options:** Custom stage names and theme customization are planned for future releases.
 
 ## Architecture
 
 The extension is built with:
+
+### Core Technologies
 - **TypeScript** for type safety
 - **Zod** for runtime validation
 - **gray-matter** for YAML frontmatter parsing
+- **date-fns** for date manipulation
 - **VSCode Extension API** for UI and commands
 
-Core components:
+### Webview UI Stack
+- **React** for component-based UI
+- **@dnd-kit** for drag-and-drop functionality
+  - `@dnd-kit/core` - Core DnD functionality
+  - `@dnd-kit/sortable` - Sortable list support
+  - `@dnd-kit/utilities` - Helper utilities
+- **Webpack** for bundling the webview
+- **CSS** with VSCode theme variables for native look and feel
+
+### Core Components
 - **Parser**: Markdown parsing and serialization
 - **FS Adapter**: File system operations with path validation
 - **Context Injector**: Stage and phase context management
 - **Tree Provider**: Sidebar tree view
+- **Webview Provider**: Visual Kanban board with drag-and-drop
 - **Commands**: User-facing actions
 
 ## Philosophy
@@ -245,27 +283,60 @@ Each repo has its own `.llmkanban/` folder. Switch projects, switch boards.
 
 ## Roadmap
 
-**Phase 1** (Completed):
-- ✅ Core infrastructure
-- ✅ Tree view sidebar
-- ✅ Basic commands (create, move, copy)
-- ✅ Context injection
+### Phase 1: Core Infrastructure ✅
+- ✅ Core file-based architecture
+- ✅ YAML frontmatter parsing
+- ✅ Context injection system
+- ✅ ID generation and validation
 
-**Phase 2** (Future):
-- 🔲 Webview Kanban board with drag-and-drop
-- 🔲 Search and filter
-- 🔲 Bulk operations
-- 🔲 Analytics and time tracking
+### Phase 2: Tree View Sidebar ✅
+- ✅ Tree data provider
+- ✅ File watcher integration
+- ✅ Click to open files
+- ✅ Context menus
+
+### Phase 3: Basic Commands ✅
+- ✅ Initialize workspace
+- ✅ Create tasks and phases
+- ✅ Move tasks between stages
+- ✅ Delete items
+
+### Phase 4: Webview Kanban Board ✅
+- ✅ React-based webview UI
+- ✅ Drag-and-drop with @dnd-kit
+- ✅ Real-time updates
+- ✅ Responsive design
+
+### Phase 5: Copy with Context ✅
+- ✅ Three copy modes (Full/Context+Content/User Only)
+- ✅ Clipboard integration
+- ✅ Context menu integration
+
+### Phase 6: Polish and UX 🔄
+- 🔄 Loading states and error handling
+- 🔄 Complete configuration options
+- 🔄 Screenshots and documentation
+- ⏳ Keyboard shortcuts documentation
+
+### Phase 7: Advanced Features ⏳
+- ⏳ Search and filter
+- ⏳ Bulk operations
+- ⏳ Analytics and time tracking
+- ⏳ Custom task templates
+
+**Legend:** ✅ Completed | 🔄 In Progress | ⏳ Planned
 
 ## Contributing
 
 Contributions welcome! This project is based on lessons learned from DocFlow.
 
 Key areas for contribution:
-- Webview Kanban board implementation
+- Advanced search and filtering
 - Additional export formats
 - Integration with other LLM tools
 - Performance optimizations
+- Bulk operations
+- Analytics features
 
 ## License
 
@@ -277,8 +348,8 @@ Inspired by and ported from the DocFlow project. Built specifically for LLM-assi
 
 ## Support
 
-- [GitHub Issues](https://github.com/your-repo/issues)
-- [Documentation](https://github.com/your-repo/wiki)
+- [GitHub Issues](https://github.com/CodexScriba/kanbanllm/issues)
+- [Documentation](https://github.com/CodexScriba/kanbanllm/wiki)
 
 ---
 
