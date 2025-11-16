@@ -60,7 +60,7 @@ The board displays **6 columns** representing the workflow stages in order:
 ├─────────────────────────────────────────────────────────────────────────┤
 │  [🔍 Search...]  [🏷️ Filter: All] [↕️ Sort: Updated]  [+ New Task]    │
 ├──────┬──────┬──────┬──────┬──────┬──────────────────────────────────────┤
-│ Chat │Queue │ Plan │Coding│Audit │Completed                            │
+│ Chat │Queue │ Plan │ Code │Audit │Completed                            │
 │  (2) │  (5) │  (3) │  (4) │  (2) │  (12)                               │
 ├──────┼──────┼──────┼──────┼──────┼──────────────────────────────────────┤
 │      │      │      │      │      │                                      │
@@ -101,7 +101,7 @@ The board displays **6 columns** representing the workflow stages in order:
 - **Items:** Files in `_context/planning/`
 - **Workflow:** Third stage - detailed planning and task breakdown
 
-#### Column 4: Coding
+#### Column 4: Code
 - **Purpose:** Tasks being actively implemented
 - **Icon:** 💻 (codicon: code)
 - **Color:** Green (#4C9A2A)
@@ -110,7 +110,7 @@ The board displays **6 columns** representing the workflow stages in order:
 - **Workflow:** Fourth stage - active implementation by coding agent
 
 #### Column 5: Audit
-- **Purpose:** Tasks under review by auditing agent
+- **Purpose:** Tasks under review by audit agent
 - **Icon:** 🔍 (codicon: search)
 - **Color:** Teal (#0E7C7B)
 - **Max Width:** 280px
@@ -268,14 +268,14 @@ The board displays **6 columns** representing the workflow stages in order:
 
 ### Stage Colors
 
-**Workflow Order:** Chat → Queue → Plan → Coding → Audit → Completed
+**Workflow Order:** Chat → Queue → Plan → Code → Audit → Completed
 
 | Stage | Light Mode | Dark Mode | Usage |
 |-------|-----------|-----------|-------|
 | Chat | #9665C0 | #B794F4 | Column header, borders, badges |
 | Queue | #D18616 | #F6AD55 | Column header, borders, badges |
 | Plan | #458AC7 | #63B3ED | Column header, borders, badges |
-| Coding | #4C9A2A | #68D391 | Column header, borders, badges |
+| Code | #4C9A2A | #68D391 | Column header, borders, badges |
 | Audit | #0E7C7B | #4FD1C5 | Column header, borders, badges |
 | Completed | #6C757D | #A0AEC0 | Column header, borders, badges |
 
@@ -376,7 +376,7 @@ LLM KANBAN                                [↻] [⚙️]
 │  ├─ 📋 Main project plan
 │  ├─ 📦 Navbar - Phase 1: UI/UX
 │  └─ 📦 Navbar - Phase 2: Auth
-├─ 💻 Coding (4)
+├─ 💻 Code (4)
 │  └─ 📄 Implement OAuth backend
 ├─ 🔍 Audit (2)
 │  └─ 📄 Review navbar layout
@@ -795,11 +795,11 @@ LLM KANBAN                                [↻] [⚙️]
   --spacing-xl: 24px;
   --spacing-2xl: 32px;
 
-  /* Stage Colors (Chat → Queue → Plan → Coding → Audit → Completed) */
+  /* Stage Colors (Chat → Queue → Plan → Code → Audit → Completed) */
   --stage-chat: #9665C0;
   --stage-queue: #D18616;
   --stage-plan: #458AC7;
-  --stage-coding: #4C9A2A;
+  --stage-code: #4C9A2A;
   --stage-audit: #0E7C7B;
   --stage-completed: #6C757D;
 
@@ -835,7 +835,7 @@ LLM KANBAN                                [↻] [⚙️]
   --stage-chat: #B794F4;
   --stage-queue: #F6AD55;
   --stage-plan: #63B3ED;
-  --stage-coding: #68D391;
+  --stage-code: #68D391;
   --stage-audit: #4FD1C5;
   --stage-completed: #A0AEC0;
 }

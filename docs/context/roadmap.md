@@ -25,7 +25,7 @@ This roadmap outlines the phased development of a VSCode extension that provides
    - Define success criteria for each workflow
 
 2. **Design Visual Interface**
-   - Sketch Kanban board layout (5 columns: backlog, in-progress, review, audit, completed)
+   - Sketch Kanban board layout (6 columns: Chat, Queue, Plan, Code, Audit, Completed)
    - Design task card appearance (badges, tags, colors)
    - Define color scheme for stages and item types
    - Create dark mode compatibility plan
@@ -71,7 +71,7 @@ This roadmap outlines the phased development of a VSCode extension that provides
    - Establish message passing architecture (webview ↔ extension)
 
 2. **Build Kanban Board Components**
-   - Create Board container layout with 5 columns
+   - Create Board container layout with 6 columns (Chat, Queue, Plan, Code, Audit, Completed)
    - Build Column component (droppable zones)
    - Build Card component (draggable items)
    - Add visual indicators for item types (phase vs task)

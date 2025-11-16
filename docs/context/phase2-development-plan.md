@@ -264,7 +264,7 @@ context.subscriptions.push(
 **Goal:** Build the 6-column board structure with static placeholder cards.
 
 **What to Build:**
-- Board container with 6 columns (Chat, Queue, Plan, Coding, Audit, Completed)
+- Board container with 6 columns (Chat, Queue, Plan, Code, Audit, Completed)
 - Column headers with icons and count badges
 - 2-3 placeholder cards per column
 - Basic CSS styling using VSCode theme variables
@@ -272,7 +272,7 @@ context.subscriptions.push(
 **Acceptance Criteria:**
 - [ ] 6 columns visible in webview
 - [ ] Columns have correct names and icons
-- [ ] Columns display in correct order (Chat → Queue → Plan → Coding → Audit → Completed)
+- [ ] Columns display in correct order (Chat → Queue → Plan → Code → Audit → Completed)
 - [ ] Each column has colored header matching design spec
 - [ ] Placeholder cards visible in each column
 - [ ] Responsive: horizontal scroll if viewport too narrow
@@ -303,7 +303,7 @@ context.subscriptions.push(
       </div>
     </div>
 
-    <!-- Repeat for Queue, Plan, Coding, Audit, Completed -->
+    <!-- Repeat for Queue, Plan, Code, Audit, Completed -->
   </div>
 </div>
 ```
