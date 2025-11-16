@@ -27,18 +27,18 @@
 ```
 docs/
   _context/
-    auditing/
-    coding/
+    audit/
+    code/
     completed/
-    planning/
+    plan/
     queue/
-    chats/          # for ai-spark conversations
+    chat/           # for ai-spark conversations
   architecture.md   # Single source of truth
   main-plan.md      # Overall project plan
 ```
 
 **File Naming Convention:**
-- Uses slugs with status: `coding.navbar.phase1.task3.md`
+- Uses slugs with status: `code.navbar.phase1.task3.md`
 - Status is visible in filename for quick identification
 
 **Goals:**
@@ -80,14 +80,14 @@ docs/
    - **Manually create** task files (e.g., `coding.navbar.phase1.task1.md`, `coding.navbar.phase1.task2.md`)
    - Move task files to `queue/` folder
 
-4. **Coding Phase** (per task):
+4. **Code Phase** (per task):
    - Open task file from `queue/`
    - Copy task content + `architecture.md` + phase plan
    - Paste into coding agent (Claude Code or Codex)
    - Agent codes the solution
    - Move task to `coding/` folder
 
-5. **Auditing Phase** (per task):
+5. **Audit Phase** (per task):
    - Copy task + code from coding agent
    - Paste into auditing agent
    - Agent reviews and provides feedback
@@ -199,22 +199,22 @@ docs/
 **Scenario:** Task is done being coded, ready for audit.
 
 **Current Steps:**
-1. Locate file in `coding/` folder (e.g., `coding.navbar.phase1.task3.md`)
-2. Manually move file to `auditing/` folder
-3. Optionally update slug to `auditing.navbar.phase1.task3.md`
+1. Locate file in `code/` folder (e.g., `code.navbar.phase1.task3.md`)
+2. Manually move file to `audit/` folder
+3. Optionally update slug to `audit.navbar.phase1.task3.md`
 
 **Desired Workflow (Option A - Tree View):**
 1. Right-click task in tree view
-2. Select "Move to Auditing"
-3. File automatically moves to `auditing/` folder
+2. Select "Move to Audit"
+3. File automatically moves to `audit/` folder
 4. Slug updated (if configured)
 5. Stage context updated in managed section
 6. Frontmatter timestamp updated
 
 **Desired Workflow (Option B - Drag on Board):**
 1. Open Kanban board webview
-2. Find task card in "Coding" column
-3. Drag to "Auditing" column
+2. Find task card in "Code" column
+3. Drag to "Audit" column
 4. Same automatic updates as above
 
 **Time Target:** <10 seconds
@@ -230,7 +230,7 @@ docs/
 
 ### Workflow 5: Visual Progress Overview
 
-**Scenario:** User wants to see how many tasks are queued, in-progress, auditing, and completed.
+**Scenario:** User wants to see how many tasks are queued, in code, audit, and completed.
 
 **Current Approach:**
 - Look at folders in file explorer
@@ -240,11 +240,11 @@ docs/
 **Desired Approach:**
 1. Open "LLM Kanban Board" webview
 2. See columns:
-   - **Chats** (ai-spark conversations)
-   - **Planning** (plans being developed)
+   - **Chat** (ai-spark conversations)
+   - **Plan** (plans being developed)
    - **Queue** (tasks ready to code)
-   - **Coding** (tasks being implemented)
-   - **Auditing** (tasks being reviewed)
+   - **Code** (tasks being implemented)
+   - **Audit** (tasks being reviewed)
    - **Completed** (finished tasks)
 3. Each column shows count badge
 4. Cards show task title, phase badge, tags
@@ -313,7 +313,7 @@ docs/
    - Click "Copy with Context"
    - Paste into Claude Code
    - Let it run autonomously (or with periodic check-ins)
-4. As tasks complete, manually move to "Auditing"
+4. As tasks complete, manually move to "Audit"
 5. Repeat for next task
 
 **Future Enhancement (Phase 7):**
@@ -484,7 +484,7 @@ docs/
 
 #### Visual Progress Tracking
 - ✅ Board loads in <2 seconds
-- ✅ Shows all stages: Chats, Planning, Queue, Coding, Auditing, Completed
+- ✅ Shows all stages: Chat, Plan, Queue, Code, Audit, Completed
 - ✅ Column badges show accurate counts
 - ✅ Tasks grouped by phase visually
 - ✅ Bottlenecks immediately identifiable

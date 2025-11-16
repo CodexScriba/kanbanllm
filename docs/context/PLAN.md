@@ -163,9 +163,9 @@ A VSCode extension that provides:
                     ┌────────▼──────────┐
                     │  .llmkanban/      │
                     │  ├── _context/    │
-                    │  ├── backlog/     │
-                    │  ├── in-progress/ │
-                    │  ├── review/      │
+                    │  ├── chat/        │
+                    │  ├── queue/       │
+                    │  ├── plan/        │
                     │  ├── audit/       │
                     │  └── completed/   │
                     └───────────────────┘
@@ -250,19 +250,19 @@ your-project/
 │   │   ├── architecture.md          # System design docs
 │   │   ├── design.md                # Design decisions
 │   │   ├── stages/                  # Stage context templates
-│   │   │   ├── backlog.md
-│   │   │   ├── in-progress.md
-│   │   │   ├── review.md
+│   │   │   ├── chat.md
+│   │   │   ├── queue.md
+│   │   │   ├── plan.md
 │   │   │   ├── audit.md
 │   │   │   └── completed.md
 │   │   └── phases/                  # Phase context files
 │   │       └── phase{N}-{slug}-{hash}.md
 │   │
-│   ├── backlog/                     # Stage folders
+│   ├── chat/                        # Stage folders
 │   │   ├── phase1-task1-xyz.md
 │   │   └── phase1-task2-abc.md
-│   ├── in-progress/
-│   ├── review/
+│   ├── queue/
+│   ├── plan/
 │   ├── audit/
 │   └── completed/
 │
@@ -316,9 +316,9 @@ vscode-llm-kanban/
 │   │
 │   └── templates/                   # Default context templates
 │       ├── stages/
-│       │   ├── backlog.md
-│       │   ├── in-progress.md
-│       │   ├── review.md
+│       │   ├── chat.md
+│       │   ├── queue.md
+│       │   ├── plan.md
 │       │   ├── audit.md
 │       │   └── completed.md
 │       └── architecture.md
@@ -348,7 +348,7 @@ Every item (task or phase) is a markdown file with three sections:
 id: phase1-task2-navbar-d9e3
 type: task
 title: "Build navigation bar"
-stage: in-progress
+stage: queue
 phase: phase1-core-mvp-a3f2
 created: 2025-11-11T10:00:00Z
 updated: 2025-11-11T14:30:00Z
@@ -367,7 +367,7 @@ This stage represents active work that is currently being implemented.
 - Update progress regularly
 - Move to Review when ready for feedback
 
-[Content from .llmkanban/_context/stages/in-progress.md]
+[Content from .llmkanban/_context/stages/queue.md]
 
 ## 📦 Phase: Core MVP
 
@@ -404,7 +404,7 @@ interface ItemFrontmatter {
   assignees?: string[];          // Future use
 }
 
-type Stage = 'backlog' | 'in-progress' | 'review' | 'audit' | 'completed';
+type Stage = 'chat' | 'queue' | 'plan' | 'code' | 'audit' | 'completed';
 ```
 
 ### ID Generation Rules
@@ -640,7 +640,7 @@ async function reinjectContextForStageChange(item: Item, newStage: Stage): Promi
 ```typescript
 import { z } from 'zod';
 
-const StageSchema = z.enum(['backlog', 'in-progress', 'review', 'audit', 'completed']);
+const StageSchema = z.enum(['chat', 'queue', 'plan', 'code', 'audit', 'completed']);
 const ItemTypeSchema = z.enum(['phase', 'task']);
 
 const ItemFrontmatterSchema = z.object({
@@ -678,7 +678,7 @@ function validateFrontmatter(data: unknown): ItemFrontmatter {
 ### 1. Webview Kanban Board
 
 **Visual Design:**
-- 5 columns (backlog, in-progress, review, audit, completed)
+- 6 columns (Chat, Queue, Plan, Code, Audit, Completed)
 - Drag-and-drop cards between columns
 - Color-coded badges (phase/task, tags)
 - Create button per column
@@ -749,12 +749,12 @@ LLM Kanban
 
 #### `llmkanban.createTask`
 - **Name:** "LLM Kanban: Create Task"
-- **Action:** Quick input prompt → creates task in backlog
+- **Action:** Quick input prompt → creates task in queue
 - **Input:** Title, Phase (picker), Tags (comma-separated)
 
 #### `llmkanban.createPhase`
 - **Name:** "LLM Kanban: Create Phase"
-- **Action:** Quick input prompt → creates phase in backlog
+- **Action:** Quick input prompt → creates phase in queue
 - **Input:** Title, Tags (comma-separated)
 
 #### `llmkanban.moveTask`
@@ -798,7 +798,7 @@ LLM Kanban
 id: phase1-task2-navbar-d9e3
 type: task
 title: "Build navigation bar"
-stage: in-progress
+stage: queue
 phase: phase1-core-mvp-a3f2
 created: 2025-11-11T10:00:00Z
 updated: 2025-11-11T14:30:00Z
@@ -877,8 +877,8 @@ tags: [ui, react]
    - Title: "Core MVP"
    - Tags: "mvp, foundation"
 4. Extension generates ID: `phase1-core-mvp-x7y2`
-5. Extension creates file: `.llmkanban/backlog/phase1-core-mvp-x7y2.md`
-6. Extension injects backlog stage context
+5. Extension creates file: `.llmkanban/queue/phase1-core-mvp-x7y2.md`
+6. Extension injects queue stage context
 7. Board refreshes, new phase appears
 8. User opens file to add phase-specific context
 
@@ -891,7 +891,7 @@ tags: [ui, react]
    - Phase: [dropdown of existing phases]
    - Tags: "backend, postgres"
 3. Extension generates ID: `phase1-task1-setup-database-a9b3`
-4. Extension creates file in backlog
+4. Extension creates file in queue
 5. Extension injects:
    - Backlog stage context
    - Selected phase context
@@ -900,14 +900,14 @@ tags: [ui, react]
 ### Workflow 4: Move Task to In Progress
 
 1. User drags task card from Backlog to In Progress column
-2. Webview sends message to extension: `{ type: 'moveItem', itemId, newStage: 'in-progress' }`
+2. Webview sends message to extension: `{ type: 'moveItem', itemId, newStage: 'code' }`
 3. Extension:
-   - Reads task file from backlog
-   - Updates frontmatter: `stage: 'in-progress'`, `updated: (now)`
+   - Reads task file from queue
+   - Updates frontmatter: `stage: 'code'`, `updated: (now)`
    - Re-injects In Progress stage context
    - Preserves phase context
    - Preserves user content
-   - Moves file: `backlog/task.md` → `in-progress/task.md`
+   - Moves file: `queue/task.md` → `code/task.md`
 4. Extension triggers file watcher event
 5. Board refreshes, card appears in new column
 
@@ -925,7 +925,7 @@ tags: [ui, react]
 
 ### Workflow 6: Manual File Edit
 
-1. User opens `.llmkanban/in-progress/task.md` in editor
+1. User opens `.llmkanban/code/task.md` in editor
 2. User edits user content section (below separator)
 3. User saves file
 4. File watcher detects change
@@ -944,8 +944,8 @@ tags: [ui, react]
    - Keeps phase context unchanged
    - Keeps user content unchanged
    - Updates frontmatter timestamps
-   - Writes to `review/` folder
-   - Deletes from `in-progress/` folder
+   - Writes to `audit/` folder
+   - Deletes from `code/` folder
 
 ### Workflow 8: Complete Task
 
@@ -1047,7 +1047,7 @@ tags: [ui, react]
    - Quick input for title
    - Input for tags
    - Generate phase ID
-   - Create file in backlog
+   - Create file in queue
 
 3. **Move Task Command**
    - Quick pick for target stage
@@ -1318,12 +1318,12 @@ tags: [ui, react]
 
 **What We Learned:**
 - Users create phases first, then tasks
-- Most tasks start in backlog
+- Most tasks start in queue
 - Users edit context files early, then forget about them
 - "Copy with context" would be used constantly (if it existed)
 
 **Application to Extension:**
-- Default new items to backlog
+- Default new items to queue
 - Make context editing prominent in setup
 - Prioritize "copy with context" command
 
@@ -1677,8 +1677,8 @@ This is the foundation for all future phases. Prioritize code quality and test c
       "properties": {
         "llmkanban.defaultStage": {
           "type": "string",
-          "default": "backlog",
-          "enum": ["backlog", "in-progress", "review", "audit", "completed"],
+          "default": "queue",
+          "enum": ["chat", "queue", "plan", "code", "audit", "completed"],
           "description": "Default stage for new tasks"
         },
         "llmkanban.enableFileWatcher": {
