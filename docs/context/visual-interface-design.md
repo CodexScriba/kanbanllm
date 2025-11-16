@@ -52,7 +52,7 @@
 
 ### Board Structure
 
-The board displays **6 columns** representing the workflow stages:
+The board displays **6 columns** representing the workflow stages in order:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -60,14 +60,14 @@ The board displays **6 columns** representing the workflow stages:
 ├─────────────────────────────────────────────────────────────────────────┤
 │  [🔍 Search...]  [🏷️ Filter: All] [↕️ Sort: Updated]  [+ New Task]    │
 ├──────┬──────┬──────┬──────┬──────┬──────────────────────────────────────┤
-│Chats │Plan  │Queue │Coding│Audit │Completed                            │
-│  (2) │  (3) │  (5) │  (4) │  (2) │  (12)                               │
+│ Chat │Queue │ Plan │Coding│Audit │Completed                            │
+│  (2) │  (5) │  (3) │  (4) │  (2) │  (12)                               │
 ├──────┼──────┼──────┼──────┼──────┼──────────────────────────────────────┤
 │      │      │      │      │      │                                      │
-│ 💬   │ 📋   │ 📦   │ 💻   │ 🔍   │ ✅                                   │
+│ 💬   │ 📦   │ 📋   │ 💻   │ 🔍   │ ✅                                   │
 │Card 1│Card 1│Card 1│Card 1│Card 1│Card 1                                │
 │      │      │      │      │      │                                      │
-│ 💬   │ 📋   │ 📦   │ 💻   │ 🔍   │ ✅                                   │
+│ 💬   │ 📦   │ 📋   │ 💻   │ 🔍   │ ✅                                   │
 │Card 2│Card 2│Card 2│Card 2│Card 2│Card 2                                │
 │      │      │      │      │      │                                      │
 │      │      │      │      │      │                                      │
@@ -77,26 +77,29 @@ The board displays **6 columns** representing the workflow stages:
 
 ### Column Specifications
 
-#### Column 1: Chats (ai-spark)
+#### Column 1: Chat (ai-spark)
 - **Purpose:** Initial ideation conversations with ai-spark agent
 - **Icon:** 💬 (codicon: comment-discussion)
 - **Color:** Purple (#9665C0)
 - **Max Width:** 280px
 - **Items:** Phase or task files in `_context/chats/`
+- **Workflow:** First stage - brainstorming and requirements gathering
 
-#### Column 2: Planning
-- **Purpose:** Plans being developed by planning agent
-- **Icon:** 📋 (codicon: file-text)
-- **Color:** Blue (#458AC7)
-- **Max Width:** 280px
-- **Items:** Files in `_context/planning/`
-
-#### Column 3: Queue
+#### Column 2: Queue
 - **Purpose:** Tasks ready to be handed to coding agent
 - **Icon:** 📦 (codicon: inbox)
 - **Color:** Orange (#D18616)
 - **Max Width:** 280px
 - **Items:** Files in `_context/queue/`
+- **Workflow:** Second stage - tasks queued for implementation
+
+#### Column 3: Plan
+- **Purpose:** Plans being developed by planning agent
+- **Icon:** 📋 (codicon: file-text)
+- **Color:** Blue (#458AC7)
+- **Max Width:** 280px
+- **Items:** Files in `_context/planning/`
+- **Workflow:** Third stage - detailed planning and task breakdown
 
 #### Column 4: Coding
 - **Purpose:** Tasks being actively implemented
@@ -104,13 +107,15 @@ The board displays **6 columns** representing the workflow stages:
 - **Color:** Green (#4C9A2A)
 - **Max Width:** 280px
 - **Items:** Files in `_context/coding/`
+- **Workflow:** Fourth stage - active implementation by coding agent
 
-#### Column 5: Auditing
+#### Column 5: Audit
 - **Purpose:** Tasks under review by auditing agent
 - **Icon:** 🔍 (codicon: search)
 - **Color:** Teal (#0E7C7B)
 - **Max Width:** 280px
 - **Items:** Files in `_context/auditing/`
+- **Workflow:** Fifth stage - code review and quality checks
 
 #### Column 6: Completed
 - **Purpose:** Finished tasks
@@ -118,6 +123,7 @@ The board displays **6 columns** representing the workflow stages:
 - **Color:** Gray (#6C757D)
 - **Max Width:** 280px
 - **Items:** Files in `_context/completed/`
+- **Workflow:** Final stage - tasks finished and approved
 
 ### Board Header Controls
 
@@ -262,13 +268,15 @@ The board displays **6 columns** representing the workflow stages:
 
 ### Stage Colors
 
+**Workflow Order:** Chat → Queue → Plan → Coding → Audit → Completed
+
 | Stage | Light Mode | Dark Mode | Usage |
 |-------|-----------|-----------|-------|
-| Chats | #9665C0 | #B794F4 | Column header, borders, badges |
-| Planning | #458AC7 | #63B3ED | Column header, borders, badges |
+| Chat | #9665C0 | #B794F4 | Column header, borders, badges |
 | Queue | #D18616 | #F6AD55 | Column header, borders, badges |
+| Plan | #458AC7 | #63B3ED | Column header, borders, badges |
 | Coding | #4C9A2A | #68D391 | Column header, borders, badges |
-| Auditing | #0E7C7B | #4FD1C5 | Column header, borders, badges |
+| Audit | #0E7C7B | #4FD1C5 | Column header, borders, badges |
 | Completed | #6C757D | #A0AEC0 | Column header, borders, badges |
 
 ### VSCode Theme Variables
@@ -317,26 +325,60 @@ The board displays **6 columns** representing the workflow stages:
 
 ## Sidebar Tree View
 
-### Tree Structure
+### Initial Sidebar View (First Development Task)
+
+**IMPORTANT:** The very first development task is to create this simple sidebar view with no logic:
+
+```
+LLM KANBAN
+├─ 📊 Open Kanban Board
+└─ ⚙️  Settings
+```
+
+**Specifications:**
+- **Title:** "LLM KANBAN" (bold, 14px)
+- **Item 1:** "Open Kanban Board" with icon 📊 (codicon: graph)
+  - Click action: (placeholder - will open webview in future)
+  - Tooltip: "Open the Kanban board view"
+- **Item 2:** "Settings" with icon ⚙️ (codicon: gear)
+  - Click action: (placeholder - will open settings in future)
+  - Tooltip: "Configure LLM Kanban settings"
+
+**Implementation Notes:**
+- Use VSCode TreeView API
+- Register as `llmKanban.treeView`
+- No backend logic required yet
+- Just render the UI structure
+- Clicking items shows notification: "Coming soon"
+
+**This establishes the foundation before adding full task management.**
+
+---
+
+### Full Tree Structure (Post-Implementation)
+
+Once the backend is implemented, the tree view will expand to show all tasks:
 
 ```
 LLM KANBAN                                [↻] [⚙️]
-├─ 💬 Chats (2)
+├─ 📊 Open Kanban Board
+├─ ⚙️  Settings
+├─ 💬 Chat (2)
 │  ├─ 💬 Navbar brainstorming
 │  └─ 💬 Auth flow discussion
-├─ 📋 Planning (3)
-│  ├─ 📋 Main project plan
-│  ├─ 📦 Navbar - Phase 1: UI/UX
-│  └─ 📦 Navbar - Phase 2: Auth
 ├─ 📦 Queue (5)
 │  ├─ 📦 Navbar - Phase 1: UI/UX (3)
 │  │  ├─ 📄 Design navbar layout
 │  │  ├─ 📄 Implement responsive design
 │  │  └─ 📄 Add animations
 │  └─ 📄 Standalone task
+├─ 📋 Plan (3)
+│  ├─ 📋 Main project plan
+│  ├─ 📦 Navbar - Phase 1: UI/UX
+│  └─ 📦 Navbar - Phase 2: Auth
 ├─ 💻 Coding (4)
 │  └─ 📄 Implement OAuth backend
-├─ 🔍 Auditing (2)
+├─ 🔍 Audit (2)
 │  └─ 📄 Review navbar layout
 └─ ✅ Completed (12)
    └─ [collapsed]
@@ -753,12 +795,12 @@ LLM KANBAN                                [↻] [⚙️]
   --spacing-xl: 24px;
   --spacing-2xl: 32px;
 
-  /* Stage Colors */
-  --stage-chats: #9665C0;
-  --stage-planning: #458AC7;
+  /* Stage Colors (Chat → Queue → Plan → Coding → Audit → Completed) */
+  --stage-chat: #9665C0;
   --stage-queue: #D18616;
+  --stage-plan: #458AC7;
   --stage-coding: #4C9A2A;
-  --stage-auditing: #0E7C7B;
+  --stage-audit: #0E7C7B;
   --stage-completed: #6C757D;
 
   /* Card Dimensions */
@@ -790,11 +832,11 @@ LLM KANBAN                                [↻] [⚙️]
 
 /* Dark Mode Overrides */
 .vscode-dark {
-  --stage-chats: #B794F4;
-  --stage-planning: #63B3ED;
+  --stage-chat: #B794F4;
   --stage-queue: #F6AD55;
+  --stage-plan: #63B3ED;
   --stage-coding: #68D391;
-  --stage-auditing: #4FD1C5;
+  --stage-audit: #4FD1C5;
   --stage-completed: #A0AEC0;
 }
 ```
