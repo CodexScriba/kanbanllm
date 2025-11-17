@@ -1,10 +1,12 @@
 import * as vscode from 'vscode';
 import { SidebarProvider } from './sidebar/SidebarProvider';
+import { KanbanPanel } from './webview/KanbanPanel';
 
 /**
  * Extension activation entry point
  *
- * Task 0: Register sidebar tree view and placeholder commands
+ * Task 0: Register sidebar tree view and placeholder commands ✅
+ * Task 1: Setup webview infrastructure ✅
  */
 export function activate(context: vscode.ExtensionContext) {
   console.log('LLM Kanban extension is now active');
@@ -17,13 +19,11 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   // Register command: Open Kanban Board
-  // Task 0: Shows placeholder notification
-  // Future: Will open webview with Kanban board
+  // Task 1: Opens webview with placeholder content
+  // Task 2: Will display full board layout
   context.subscriptions.push(
     vscode.commands.registerCommand('llmKanban.openBoard', () => {
-      vscode.window.showInformationMessage('Open Kanban Board - Coming soon!');
-      // Future implementation:
-      // KanbanPanel.createOrShow(context.extensionUri);
+      KanbanPanel.createOrShow(context.extensionUri);
     })
   );
 

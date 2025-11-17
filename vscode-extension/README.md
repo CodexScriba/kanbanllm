@@ -4,19 +4,26 @@ File-based Kanban board for managing LLM-assisted development workflows.
 
 ## Development Status
 
-**Current Implementation:** Task 0 - Basic Sidebar View ✅
+**Current Implementation:** Task 1 - Webview Infrastructure ✅
 
 ### Completed Features
 
+**Task 0:** ✅ Basic Sidebar View
 - ✅ VSCode sidebar with "LLM Kanban" activity bar icon
 - ✅ Two menu items: "Open Kanban Board" and "Settings"
-- ✅ Placeholder commands (show "Coming soon" notifications)
 - ✅ Proper TypeScript structure and compilation
+
+**Task 1:** ✅ Webview Infrastructure
+- ✅ Webview panel opens when clicking "Open Kanban Board"
+- ✅ VSCode theme integration (respects dark/light mode)
+- ✅ Message passing configured (extension ↔ webview)
+- ✅ Content Security Policy properly configured
+- ✅ Placeholder content displays with task progress info
 
 ### Next Steps
 
-- Task 1: Setup Webview Infrastructure
-- Task 2: Create Board Layout Shell
+- Task 2: Create Board Layout Shell (6 columns: Chat → Queue → Plan → Code → Audit → Completed)
+- Task 3: Setup React Environment
 - See `../docs/context/phase2-development-plan.md` for full roadmap
 
 ## Development Setup
@@ -57,7 +64,10 @@ npm run watch
    - Verify two items appear:
      - 📊 Open Kanban Board
      - ⚙️ Settings
-   - Click each item - should show "Coming soon" notification
+   - **Task 1:** Click "Open Kanban Board" → webview panel should open
+   - Verify webview shows "Kanban Board" title and placeholder content
+   - Verify webview respects your theme (light/dark mode)
+   - Click "Settings" → shows "Coming soon" notification (not implemented yet)
 
 ### Project Structure
 
@@ -65,8 +75,10 @@ npm run watch
 vscode-extension/
 ├── src/
 │   ├── extension.ts              # Main extension entry point
-│   └── sidebar/
-│       └── SidebarProvider.ts    # Tree view provider for sidebar
+│   ├── sidebar/
+│   │   └── SidebarProvider.ts    # Tree view provider for sidebar
+│   └── webview/
+│       └── KanbanPanel.ts        # Kanban board webview panel
 ├── resources/
 │   └── kanban-icon.svg          # Activity bar icon
 ├── out/                         # Compiled JavaScript (generated)
@@ -75,41 +87,66 @@ vscode-extension/
 └── README.md                    # This file
 ```
 
-## Features (Task 0)
+## Features
 
-### Sidebar Tree View
+### Task 0: Sidebar Tree View ✅
 
 The extension adds a new sidebar to VSCode with two menu items:
 
 1. **Open Kanban Board** (📊 icon)
    - Command: `llmKanban.openBoard`
-   - Action: Shows notification "Open Kanban Board - Coming soon!"
-   - Future: Will open webview with Kanban board
+   - Action: Opens webview panel with Kanban board
+   - Status: ✅ Webview infrastructure complete (Task 1)
 
 2. **Settings** (⚙️ icon)
    - Command: `llmKanban.openSettings`
    - Action: Shows notification "Settings - Coming soon!"
-   - Future: Will open settings configuration
+   - Status: ⏳ Future implementation
+
+### Task 1: Webview Infrastructure ✅
+
+**Kanban Board Webview:**
+- Opens in editor panel when "Open Kanban Board" is clicked
+- Displays placeholder content with task progress
+- Respects VSCode theme (dark/light mode)
+- Message passing configured for future interactivity
+- Content Security Policy properly configured
+
+**Message Passing:**
+- Extension → Webview: Ready for sending data
+- Webview → Extension: Logs messages to console
+- Test: Click anywhere in webview to see message in Debug Console
 
 ### Architecture Notes
 
 - Uses VSCode TreeView API for sidebar
-- Clean separation: `SidebarProvider` handles tree data
-- Placeholder commands registered in `extension.ts`
-- No backend logic yet (pure UI shell)
+- Uses VSCode Webview API for board display
+- Clean separation: `SidebarProvider` for tree, `KanbanPanel` for board
+- Singleton pattern for webview (only one board open at a time)
+- Proper resource cleanup on panel disposal
 
 ## Testing Checklist
 
-Task 0 is complete when:
+**Task 0:** ✅ Basic Sidebar View
 
 - [x] Extension appears in VSCode Activity Bar
 - [x] Clicking extension icon shows "LLM KANBAN" tree view
 - [x] Two items visible: "Open Kanban Board" and "Settings"
 - [x] Both items have correct icons (graph, gear)
-- [x] Clicking items shows notification: "Coming soon"
 - [x] Works in both light and dark themes
 - [x] TypeScript compiles without errors
 - [x] No runtime errors in Debug Console
+
+**Task 1:** ✅ Webview Infrastructure
+
+- [x] Clicking "Open Kanban Board" opens webview panel
+- [x] Webview displays placeholder content
+- [x] Webview respects VSCode theme (dark/light)
+- [x] Can send messages from extension to webview
+- [x] Can send messages from webview to extension
+- [x] Content Security Policy configured correctly
+- [x] Singleton pattern works (only one panel at a time)
+- [x] Panel disposal cleanup works properly
 
 ## Development Commands
 
