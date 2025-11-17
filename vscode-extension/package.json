@@ -1,26 +1,59 @@
 {
-  "name": "kanbanllm-sample-column-extension",
-  "displayName": "KanbanLLM Sample Column Extension",
-  "description": "A minimal example VS Code extension that opens a column with a button which writes 'you click a button' into the same view.",
-  "version": "0.0.1",
+  "name": "kanbanllm",
+  "displayName": "LLM Kanban",
+  "description": "File-based Kanban board for managing LLM-assisted development tasks",
+  "version": "0.1.0",
   "publisher": "your-name-or-org",
   "engines": {
     "vscode": "^1.90.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Project Management"
   ],
   "main": "./out/extension.js",
   "activationEvents": [
-    "onCommand:kanbanllm.openSampleColumn"
+    "workspaceContains:.llmkanban",
+    "onCommand:llmkanban.init"
   ],
   "contributes": {
     "commands": [
       {
-        "command": "kanbanllm.openSampleColumn",
-        "title": "Open Sample Column"
+        "command": "llmkanban.init",
+        "title": "LLM Kanban: Initialize Workspace"
+      },
+      {
+        "command": "llmkanban.refreshBoard",
+        "title": "LLM Kanban: Refresh Board",
+        "icon": "$(refresh)"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "llmkanban",
+          "title": "LLM Kanban",
+          "icon": "$(checklist)"
+        }
+      ]
+    },
+    "views": {
+      "llmkanban": [
+        {
+          "id": "llmkanban.treeView",
+          "name": "Tasks"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "llmkanban.refreshBoard",
+          "when": "view == llmkanban.treeView",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "compile": "tsc -p ./tsconfig.json",
@@ -35,5 +68,9 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
-  "dependencies": {}
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "gray-matter": "^4.0.3",
+    "zod": "^4.1.12"
+  }
 }
