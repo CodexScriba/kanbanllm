@@ -141,6 +141,14 @@ export class KanbanPanel {
       padding: 20px;
     }
 
+    .container-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      max-width: 520px;
+    }
+
     h1 {
       color: var(--vscode-editor-foreground);
       font-size: 24px;
@@ -193,32 +201,110 @@ export class KanbanPanel {
       background-color: var(--vscode-button-background);
       color: var(--vscode-button-foreground);
       padding: 4px 12px;
-      border-radius: 3px;
+      border-radius: 999px;
       font-size: 12px;
       font-weight: 600;
       margin-top: 8px;
+    }
+
+    .actions {
+      margin-top: 28px;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .action-button {
+      min-width: 180px;
+      padding: 10px 20px;
+      border-radius: 999px;
+      border: 1px solid var(--vscode-button-border, var(--vscode-button-background));
+      background: transparent;
+      color: var(--vscode-button-foreground);
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      outline: none;
+      transition:
+        background-color 120ms ease,
+        border-color 120ms ease,
+        box-shadow 120ms ease,
+        transform 80ms ease;
+    }
+
+    .action-button.primary {
+      background-color: var(--vscode-button-background);
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+    }
+
+    .action-button.secondary {
+      border-color: var(--vscode-editor-foreground);
+      color: var(--vscode-editor-foreground);
+      opacity: 0.9;
+    }
+
+    .action-button:hover {
+      transform: translateY(-1px);
+      background-color: var(--vscode-button-hoverBackground, var(--vscode-button-background));
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .action-button.secondary:hover {
+      background-color: rgba(255, 255, 255, 0.04);
+    }
+
+    .action-button:active {
+      transform: translateY(0);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .action-button .label {
+      font-weight: 600;
+    }
+
+    .action-button .accent {
+      font-size: 11px;
+      opacity: 0.7;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="icon">📊</div>
-    <h1>Kanban Board</h1>
-    <p>
-      The visual Kanban board interface is coming soon. This webview infrastructure is ready and
-      will display the full 6-column board (Chat → Queue → Plan → Code → Audit → Completed) in the next task.
-    </p>
+    <div class="container-inner">
+      <div class="icon">📊</div>
+      <h1>Kanban Board</h1>
+      <p>
+        The visual Kanban board interface is coming soon. This webview infrastructure is ready and
+        will display the full 6-column board (Chat → Queue → Plan → Code → Audit → Completed) in the next task.
+      </p>
 
-    <div class="info">
-      <h2>✅ Task 1 Complete: Webview Infrastructure</h2>
-      <ul>
-        <li>Webview panel opens successfully</li>
-        <li>VSCode theme integration working</li>
-        <li>Message passing configured (extension ↔ webview)</li>
-        <li>Content Security Policy configured</li>
-        <li>Ready for Task 2: Board layout shell</li>
-      </ul>
-      <span class="status">Phase 2 - Task 1/10</span>
+      <div class="info">
+        <h2>✅ Task 1 Complete: Webview Infrastructure</h2>
+        <ul>
+          <li>Webview panel opens successfully</li>
+          <li>VSCode theme integration working</li>
+          <li>Message passing configured (extension ↔ webview)</li>
+          <li>Content Security Policy configured</li>
+          <li>Ready for Task 2: Board layout shell</li>
+        </ul>
+        <span class="status">Phase 2 - Task 1/10</span>
+      </div>
+
+      <div class="actions">
+        <button class="action-button primary" type="button">
+          <span class="label">Begin Board Layout</span>
+        </button>
+        <button class="action-button secondary" type="button">
+          <span class="label">View Phase 2 Plan</span>
+          <span class="accent">phase-2 / 10</span>
+        </button>
+      </div>
     </div>
   </div>
 
