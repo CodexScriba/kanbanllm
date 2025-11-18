@@ -4,7 +4,7 @@ import { FrontmatterSchema, normalizeStageValue } from './parser';
 import { findItemById } from './fs-adapter';
 import type { Stage, ItemType, Frontmatter } from './types';
 
-const VALID_STAGES: Stage[] = ['queue', 'planning', 'coding', 'auditing', 'completed'];
+const VALID_STAGES: Stage[] = ['chat', 'queue', 'plan', 'code', 'audit', 'completed'];
 const VALID_ITEM_TYPES: ItemType[] = ['phase', 'task'];
 
 /**

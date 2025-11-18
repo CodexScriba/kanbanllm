@@ -83,6 +83,13 @@ export class SidebarProvider implements vscode.TreeDataProvider<SidebarItem> {
   private getInitialMenuItems(): SidebarItem[] {
     return [
       new SidebarItem(
+        'Initialize Workspace',
+        vscode.TreeItemCollapsibleState.None,
+        'folder-opened',
+        'llmKanban.initializeWorkspace',
+        'Create the .llmkanban folder and default structure'
+      ),
+      new SidebarItem(
         'Open Kanban Board',
         vscode.TreeItemCollapsibleState.None,
         'graph',

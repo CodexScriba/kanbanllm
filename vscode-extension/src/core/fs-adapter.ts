@@ -3,18 +3,36 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import type { Stage, Item } from './types';
 
-// Root directory for all docflow files
-const DOCFLOW_ROOT = path.join(process.cwd(), 'docflow');
+const KANBAN_FOLDER_NAME = '.llmkanban';
+let workspaceRoot: string | null = null;
 
 /**
- * Validates that a path resolves inside the docflow directory
+ * Configure the workspace root where the .llmkanban folder lives.
+ * Must be called by the extension before any FS operations are performed.
+ */
+export function configureWorkspaceRoot(rootPath: string): void {
+  workspaceRoot = rootPath;
+}
+
+/**
+ * Resolves the absolute kanban root path.
+ */
+export function getKanbanRootPath(): string {
+  if (!workspaceRoot) {
+    throw new Error('Kanban workspace root has not been configured');
+  }
+  return path.resolve(path.join(workspaceRoot, KANBAN_FOLDER_NAME));
+}
+
+/**
+ * Validates that a path resolves inside the kanban directory
  */
 function validatePath(filePath: string): string {
   const resolvedPath = path.resolve(filePath);
-  const resolvedRoot = path.resolve(DOCFLOW_ROOT);
+  const resolvedRoot = getKanbanRootPath();
 
   if (!resolvedPath.startsWith(resolvedRoot)) {
-    throw new Error(`Path ${filePath} is outside of docflow directory`);
+    throw new Error(`Path ${filePath} is outside of ${KANBAN_FOLDER_NAME} directory`);
   }
 
   return resolvedPath;
@@ -24,7 +42,7 @@ function validatePath(filePath: string): string {
  * Lists all .md files in a given stage folder
  */
 export async function listItemsInStage(stage: Stage): Promise<string[]> {
-  const stagePath = validatePath(path.join(DOCFLOW_ROOT, stage));
+  const stagePath = validatePath(path.join(getKanbanRootPath(), stage));
 
   try {
     const files = await fs.readdir(stagePath);
@@ -128,9 +146,9 @@ export async function readContextFile(type: 'stage' | 'phase', id: string): Prom
   let contextPath: string;
 
   if (type === 'stage') {
-    contextPath = path.join(DOCFLOW_ROOT, '_context', 'stages', `${id}.md`);
+    contextPath = path.join(getKanbanRootPath(), '_context', 'stages', `${id}.md`);
   } else {
-    contextPath = path.join(DOCFLOW_ROOT, '_context', 'phases', `${id}.md`);
+    contextPath = path.join(getKanbanRootPath(), '_context', 'phases', `${id}.md`);
   }
 
   const validatedPath = validatePath(contextPath);
@@ -150,7 +168,7 @@ export async function readContextFile(type: 'stage' | 'phase', id: string): Prom
  * Finds an item by ID across all stage folders
  */
 export async function findItemById(itemId: string): Promise<string | null> {
-  const stages: Stage[] = ['queue', 'planning', 'coding', 'auditing', 'completed'];
+  const stages: Stage[] = ['chat', 'queue', 'plan', 'code', 'audit', 'completed'];
 
   for (const stage of stages) {
     const items = await listItemsInStage(stage);
@@ -171,14 +189,14 @@ export async function findItemById(itemId: string): Promise<string | null> {
  * Gets the stage folder path for a given stage
  */
 export function getStagePath(stage: Stage): string {
-  return path.join(DOCFLOW_ROOT, stage);
+  return path.join(getKanbanRootPath(), stage);
 }
 
 /**
  * Gets the full file path for an item in a specific stage
  */
 export function getItemPath(itemId: string, stage: Stage): string {
-  return path.join(DOCFLOW_ROOT, stage, `${itemId}.md`);
+  return path.join(getKanbanRootPath(), stage, `${itemId}.md`);
 }
 
 /**
@@ -231,11 +249,11 @@ export function extractSlugFromId(id: string): string {
  * Load all items from all stages
  */
 export async function loadAllItems(): Promise<Item[]> {
-  const stages: Stage[] = ['queue', 'planning', 'coding', 'auditing', 'completed'];
+  const stages: Stage[] = ['chat', 'queue', 'plan', 'code', 'audit', 'completed'];
   const allItems: Item[] = [];
 
   // Import parseItem dynamically to avoid circular dependency
-  const { parseItem } = await import('./parser');
+  const { parseItem } = await import('./parser.js');
 
   for (const stage of stages) {
     const itemPaths = await listItemsInStage(stage);

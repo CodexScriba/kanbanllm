@@ -61,9 +61,11 @@ npm run watch
 3. **Verify Functionality:**
    - Look for "LLM Kanban" icon in Activity Bar (left sidebar)
    - Click icon to open sidebar
-   - Verify two items appear:
+   - Verify three items appear:
+     - 📁 Initialize Workspace
      - 📊 Open Kanban Board
      - ⚙️ Settings
+   - Run **Initialize Workspace** once to create `.llmkanban/`
    - **Task 1:** Click "Open Kanban Board" → webview panel should open
    - Verify webview shows "Kanban Board" title and placeholder content
    - Verify webview respects your theme (light/dark mode)
@@ -75,10 +77,13 @@ npm run watch
 vscode-extension/
 ├── src/
 │   ├── extension.ts              # Main extension entry point
+│   ├── core/                     # File-system + parsing utilities
 │   ├── sidebar/
 │   │   └── SidebarProvider.ts    # Tree view provider for sidebar
-│   └── webview/
-│       └── KanbanPanel.ts        # Kanban board webview panel
+│   ├── webview/
+│   │   └── KanbanPanel.ts        # Kanban board webview panel
+│   └── workspace/
+│       └── KanbanWorkspace.ts    # .llmkanban initialization helpers
 ├── resources/
 │   └── kanban-icon.svg          # Activity bar icon
 ├── out/                         # Compiled JavaScript (generated)
@@ -91,14 +96,19 @@ vscode-extension/
 
 ### Task 0: Sidebar Tree View ✅
 
-The extension adds a new sidebar to VSCode with two menu items:
+The extension adds a new sidebar to VSCode with three menu items:
 
-1. **Open Kanban Board** (📊 icon)
+1. **Initialize Workspace** (📁 icon)
+   - Command: `llmKanban.initializeWorkspace`
+   - Action: Creates the `.llmkanban/` folder with default stage/context files
+   - Status: ✅ Implemented
+
+2. **Open Kanban Board** (📊 icon)
    - Command: `llmKanban.openBoard`
    - Action: Opens webview panel with Kanban board
    - Status: ✅ Webview infrastructure complete (Task 1)
 
-2. **Settings** (⚙️ icon)
+3. **Settings** (⚙️ icon)
    - Command: `llmKanban.openSettings`
    - Action: Shows notification "Settings - Coming soon!"
    - Status: ⏳ Future implementation
@@ -131,8 +141,8 @@ The extension adds a new sidebar to VSCode with two menu items:
 
 - [x] Extension appears in VSCode Activity Bar
 - [x] Clicking extension icon shows "LLM KANBAN" tree view
-- [x] Two items visible: "Open Kanban Board" and "Settings"
-- [x] Both items have correct icons (graph, gear)
+- [x] Initialize/Open/Settings commands available from sidebar
+- [x] Stage initialization command creates `.llmkanban/`
 - [x] Works in both light and dark themes
 - [x] TypeScript compiles without errors
 - [x] No runtime errors in Debug Console
@@ -162,6 +172,9 @@ npm run watch
 
 # Lint code
 npm run lint
+
+# Run unit tests
+npm run test
 
 # Package extension (for distribution)
 npm run vscode:prepublish

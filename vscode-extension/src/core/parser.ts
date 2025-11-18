@@ -4,32 +4,38 @@ import { z } from 'zod';
 import type { Item, Frontmatter, Stage } from './types';
 
 // Constants for separators
-export const MANAGED_SECTION_START = '<!-- DOCFLOW:MANAGED - Do not edit above the separator -->';
-export const USER_CONTENT_START = '<!-- DOCFLOW:USER-CONTENT - Edit below this line -->';
+export const MANAGED_SECTION_START = '<!-- LLMKANBAN:MANAGED - Do not edit above this line -->';
+export const USER_CONTENT_START = '<!-- LLMKANBAN:USER-CONTENT - Edit below this line -->';
 
 // Zod schema for frontmatter validation
 const stageValues = [
+  'chat',
   'queue',
+  'plan',
+  'code',
+  'audit',
+  'completed',
   'planning',
   'coding',
   'auditing',
-  'completed',
   'backlog',
   'in-progress',
   'review',
-  'audit',
 ] as const;
 
 const stageNormalizationMap: Record<typeof stageValues[number], Stage> = {
+  chat: 'chat',
   queue: 'queue',
-  planning: 'planning',
-  coding: 'coding',
-  auditing: 'auditing',
+  plan: 'plan',
+  code: 'code',
+  audit: 'audit',
   completed: 'completed',
+  planning: 'plan',
+  coding: 'code',
+  auditing: 'audit',
   backlog: 'queue',
-  'in-progress': 'planning',
-  review: 'coding',
-  audit: 'auditing',
+  'in-progress': 'plan',
+  review: 'audit',
 };
 
 export function normalizeStageValue(stage: typeof stageValues[number]): Stage {
