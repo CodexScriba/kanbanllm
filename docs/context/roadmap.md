@@ -66,7 +66,7 @@ This roadmap outlines the phased development of a VSCode extension that provides
 
 1. **Setup Webview Infrastructure**
    - Configure React environment for webview
-   - Setup styling system (CSS or Tailwind)
+   - Setup styling system ~(CSS or Tailwind)
    - Configure webpack for bundling
    - Establish message passing architecture (webview ↔ extension)
 
