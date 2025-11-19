@@ -1,48 +1,89 @@
 import * as vscode from 'vscode';
+import { loadAllItems } from '../../../src/core/fs-adapter';
+import { Item, Stage } from '../../../src/core/types';
 
 /**
- * Sidebar tree item representing menu items in the LLM Kanban sidebar
+ * Sidebar tree item types
  */
-export class SidebarItem extends vscode.TreeItem {
+type TreeItemType = 'menu' | 'stage' | 'item';
+
+/**
+ * Sidebar tree item with extended properties
+ */
+export class KanbanTreeItem extends vscode.TreeItem {
   constructor(
     public readonly label: string,
+    public readonly type: TreeItemType,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-    public readonly iconName: string,
-    public readonly commandId: string,
-    public readonly tooltip?: string
+    public readonly itemData?: Item,
+    public readonly stage?: Stage,
+    public readonly commandId?: string
   ) {
     super(label, collapsibleState);
 
-    // Set icon using VSCode's built-in codicons
-    this.iconPath = new vscode.ThemeIcon(iconName);
+    // Set icon based on type
+    if (type === 'menu') {
+      this.iconPath = new vscode.ThemeIcon(commandId === 'llmKanban.openBoard' ? 'graph' : 'gear');
+    } else if (type === 'stage') {
+      this.iconPath = this.getStageIcon(stage!);
+      this.description = `${this.children?.length || 0} items`;
+    } else if (type === 'item' && itemData) {
+      this.iconPath = new vscode.ThemeIcon(itemData.type === 'phase' ? 'package' : 'check');
+      this.description = itemData.tags.join(', ');
+      this.tooltip = `${itemData.title}\nID: ${itemData.id}\nUpdated: ${new Date(itemData.updated).toLocaleString()}`;
+      this.contextValue = 'kanbanItem';
+    }
 
-    // Set tooltip
-    this.tooltip = tooltip || label;
+    // Set command for menu items
+    if (type === 'menu' && commandId) {
+      this.command = {
+        command: commandId,
+        title: label,
+        arguments: []
+      };
+    }
+    // Set command for item clicks (open file)
+    else if (type === 'item' && itemData) {
+      this.command = {
+        command: 'llmKanban.openItemFromSidebar',
+        title: 'Open Item',
+        arguments: [itemData.id]
+      };
+    }
+  }
 
-    // Set command to execute when item is clicked
-    this.command = {
-      command: commandId,
-      title: label,
-      arguments: []
+  public children?: KanbanTreeItem[];
+
+  private getStageIcon(stage: Stage): vscode.ThemeIcon {
+    const iconMap: Record<Stage, string> = {
+      queue: 'inbox',
+      planning: 'edit',
+      coding: 'code',
+      auditing: 'search',
+      completed: 'check-all'
     };
+    return new vscode.ThemeIcon(iconMap[stage]);
   }
 }
 
 /**
- * Tree data provider for the LLM Kanban sidebar
- *
- * Task 0: Initial implementation with just two menu items:
- * - Open Kanban Board
- * - Settings
+ * Tree data provider for the LLM Kanban sidebar with full task hierarchy
  */
-export class SidebarProvider implements vscode.TreeDataProvider<SidebarItem> {
-  private _onDidChangeTreeData: vscode.EventEmitter<SidebarItem | undefined | null | void> =
-    new vscode.EventEmitter<SidebarItem | undefined | null | void>();
-  readonly onDidChangeTreeData: vscode.Event<SidebarItem | undefined | null | void> =
+export class SidebarProvider implements vscode.TreeDataProvider<KanbanTreeItem> {
+  private _onDidChangeTreeData: vscode.EventEmitter<KanbanTreeItem | undefined | null | void> =
+    new vscode.EventEmitter<KanbanTreeItem | undefined | null | void>();
+  readonly onDidChangeTreeData: vscode.Event<KanbanTreeItem | undefined | null | void> =
     this._onDidChangeTreeData.event;
 
+  private _workspaceRoot: string | undefined;
+  private _cacheEnabled: boolean = true;
+
   constructor() {
-    // No initialization needed for Task 0
+    // Get workspace root
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (workspaceFolders && workspaceFolders.length > 0) {
+      this._workspaceRoot = workspaceFolders[0].uri.fsPath;
+    }
   }
 
   /**
@@ -55,46 +96,172 @@ export class SidebarProvider implements vscode.TreeDataProvider<SidebarItem> {
   /**
    * Get tree item representation
    */
-  getTreeItem(element: SidebarItem): vscode.TreeItem {
+  getTreeItem(element: KanbanTreeItem): vscode.TreeItem {
     return element;
   }
 
   /**
    * Get children for the tree view
-   *
-   * Task 0: Returns only the two initial menu items
-   * Future: Will return the full task hierarchy
    */
-  getChildren(element?: SidebarItem): Thenable<SidebarItem[]> {
-    if (element) {
-      // No children for now (Task 0 - flat structure)
-      return Promise.resolve([]);
+  async getChildren(element?: KanbanTreeItem): Promise<KanbanTreeItem[]> {
+    if (!this._workspaceRoot) {
+      return this.getMenuItemsOnly();
     }
 
-    // Root level items
-    return Promise.resolve(this.getInitialMenuItems());
+    // Root level
+    if (!element) {
+      return this.getRootItems();
+    }
+
+    // Menu items have no children
+    if (element.type === 'menu') {
+      return [];
+    }
+
+    // Stage items - return items in that stage
+    if (element.type === 'stage' && element.children) {
+      return element.children;
+    }
+
+    // Item children (phases can contain tasks)
+    if (element.type === 'item' && element.itemData?.type === 'phase') {
+      return element.children || [];
+    }
+
+    return [];
   }
 
   /**
-   * Get the initial menu items for Task 0
-   *
-   * @returns Array of two menu items: Open Kanban Board and Settings
+   * Get root level items (menu + stages)
    */
-  private getInitialMenuItems(): SidebarItem[] {
-    return [
-      new SidebarItem(
+  private async getRootItems(): Promise<KanbanTreeItem[]> {
+    const menuItems = [
+      new KanbanTreeItem(
         'Open Kanban Board',
+        'menu',
         vscode.TreeItemCollapsibleState.None,
-        'graph',
-        'llmKanban.openBoard',
-        'Open the Kanban board view'
+        undefined,
+        undefined,
+        'llmKanban.openBoard'
       ),
-      new SidebarItem(
+      new KanbanTreeItem(
         'Settings',
+        'menu',
         vscode.TreeItemCollapsibleState.None,
-        'gear',
-        'llmKanban.openSettings',
-        'Configure LLM Kanban settings'
+        undefined,
+        undefined,
+        'llmKanban.openSettings'
+      )
+    ];
+
+    try {
+      const boardData = await loadAllItems(this._workspaceRoot!);
+      const stageItems = await this.buildStageTree(boardData);
+      return [...menuItems, ...stageItems];
+    } catch (error) {
+      console.error('Error loading sidebar data:', error);
+      return menuItems;
+    }
+  }
+
+  /**
+   * Build hierarchical tree of stages → phases → tasks
+   */
+  private async buildStageTree(boardData: any): Promise<KanbanTreeItem[]> {
+    const stages: Stage[] = ['queue', 'planning', 'coding', 'auditing', 'completed'];
+    const stageLabels: Record<Stage, string> = {
+      queue: 'Queue',
+      planning: 'Planning',
+      coding: 'Coding',
+      auditing: 'Auditing',
+      completed: 'Completed'
+    };
+
+    return stages.map(stage => {
+      const items = boardData[stage] || [];
+      const phases = items.filter((item: Item) => item.type === 'phase');
+      const tasks = items.filter((item: Item) => item.type === 'task');
+
+      // Build tree: phases with their tasks, then orphan tasks
+      const childItems: KanbanTreeItem[] = [];
+
+      // Add phases with their tasks
+      phases.forEach((phase: Item) => {
+        const phaseTasks = tasks.filter((task: Item) => task.phaseId === phase.id);
+        const phaseItem = new KanbanTreeItem(
+          phase.title,
+          'item',
+          phaseTasks.length > 0
+            ? vscode.TreeItemCollapsibleState.Collapsed
+            : vscode.TreeItemCollapsibleState.None,
+          phase,
+          stage
+        );
+
+        if (phaseTasks.length > 0) {
+          phaseItem.children = phaseTasks.map((task: Item) =>
+            new KanbanTreeItem(
+              task.title,
+              'item',
+              vscode.TreeItemCollapsibleState.None,
+              task,
+              stage
+            )
+          );
+        }
+
+        childItems.push(phaseItem);
+      });
+
+      // Add orphan tasks (tasks without a phase)
+      const orphanTasks = tasks.filter((task: Item) => !task.phaseId);
+      orphanTasks.forEach((task: Item) => {
+        childItems.push(
+          new KanbanTreeItem(
+            task.title,
+            'item',
+            vscode.TreeItemCollapsibleState.None,
+            task,
+            stage
+          )
+        );
+      });
+
+      const stageItem = new KanbanTreeItem(
+        `${stageLabels[stage]} (${items.length})`,
+        'stage',
+        childItems.length > 0
+          ? vscode.TreeItemCollapsibleState.Collapsed
+          : vscode.TreeItemCollapsibleState.None,
+        undefined,
+        stage
+      );
+
+      stageItem.children = childItems;
+      return stageItem;
+    });
+  }
+
+  /**
+   * Get only menu items (when no workspace open)
+   */
+  private getMenuItemsOnly(): KanbanTreeItem[] {
+    return [
+      new KanbanTreeItem(
+        'Open Kanban Board',
+        'menu',
+        vscode.TreeItemCollapsibleState.None,
+        undefined,
+        undefined,
+        'llmKanban.openBoard'
+      ),
+      new KanbanTreeItem(
+        'Settings',
+        'menu',
+        vscode.TreeItemCollapsibleState.None,
+        undefined,
+        undefined,
+        'llmKanban.openSettings'
       )
     ];
   }
