@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { loadAllItems } from '../../../src/core/fs-adapter';
-import { Item, Stage } from '../../../src/core/types';
+import { loadBoardData, type FlatItem } from '../../../src/core/fs-adapter';
+import { Stage } from '../../../src/core/types';
 
 /**
  * Sidebar tree item types
@@ -15,7 +15,7 @@ export class KanbanTreeItem extends vscode.TreeItem {
     public readonly label: string,
     public readonly type: TreeItemType,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-    public readonly itemData?: Item,
+    public readonly itemData?: FlatItem,
     public readonly stage?: Stage,
     public readonly commandId?: string
   ) {
@@ -123,7 +123,7 @@ export class SidebarProvider implements vscode.TreeDataProvider<KanbanTreeItem> 
       return element.children;
     }
 
-    // Item children (phases can contain tasks)
+    // FlatItem children (phases can contain tasks)
     if (element.type === 'item' && element.itemData?.type === 'phase') {
       return element.children || [];
     }
@@ -155,7 +155,7 @@ export class SidebarProvider implements vscode.TreeDataProvider<KanbanTreeItem> 
     ];
 
     try {
-      const boardData = await loadAllItems(this._workspaceRoot!);
+      const boardData = await loadBoardData(this._workspaceRoot!);
       const stageItems = await this.buildStageTree(boardData);
       return [...menuItems, ...stageItems];
     } catch (error) {
@@ -179,15 +179,15 @@ export class SidebarProvider implements vscode.TreeDataProvider<KanbanTreeItem> 
 
     return stages.map(stage => {
       const items = boardData[stage] || [];
-      const phases = items.filter((item: Item) => item.type === 'phase');
-      const tasks = items.filter((item: Item) => item.type === 'task');
+      const phases = items.filter((item: FlatItem) => item.type === 'phase');
+      const tasks = items.filter((item: FlatItem) => item.type === 'task');
 
       // Build tree: phases with their tasks, then orphan tasks
       const childItems: KanbanTreeItem[] = [];
 
       // Add phases with their tasks
-      phases.forEach((phase: Item) => {
-        const phaseTasks = tasks.filter((task: Item) => task.phaseId === phase.id);
+      phases.forEach((phase: FlatItem) => {
+        const phaseTasks = tasks.filter((task: FlatItem) => task.phaseId === phase.id);
         const phaseItem = new KanbanTreeItem(
           phase.title,
           'item',
@@ -199,7 +199,7 @@ export class SidebarProvider implements vscode.TreeDataProvider<KanbanTreeItem> 
         );
 
         if (phaseTasks.length > 0) {
-          phaseItem.children = phaseTasks.map((task: Item) =>
+          phaseItem.children = phaseTasks.map((task: FlatItem) =>
             new KanbanTreeItem(
               task.title,
               'item',
@@ -214,8 +214,8 @@ export class SidebarProvider implements vscode.TreeDataProvider<KanbanTreeItem> 
       });
 
       // Add orphan tasks (tasks without a phase)
-      const orphanTasks = tasks.filter((task: Item) => !task.phaseId);
-      orphanTasks.forEach((task: Item) => {
+      const orphanTasks = tasks.filter((task: FlatItem) => !task.phaseId);
+      orphanTasks.forEach((task: FlatItem) => {
         childItems.push(
           new KanbanTreeItem(
             task.title,

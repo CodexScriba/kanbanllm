@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { loadAllItems, moveItem as moveItemBackend, deleteItem as deleteItemBackend, readItem } from '../../../src/core/fs-adapter';
+import { loadBoardData, moveItemToStage, deleteItemById, readItemById } from '../../../src/core/fs-adapter';
 import { serializeItemToMarkdown } from '../../../src/core/parser';
 
 /**
@@ -92,7 +92,7 @@ export class KanbanPanel {
           break;
 
         case 'moveItem':
-          await moveItemBackend(this._workspaceRoot, message.itemId, message.targetStage);
+          await moveItemToStage(this._workspaceRoot, message.itemId, message.targetStage);
           await this._loadAndSendData(); // Refresh data
           vscode.window.showInformationMessage(`Item moved to ${message.targetStage}`);
           break;
@@ -102,7 +102,7 @@ export class KanbanPanel {
           break;
 
         case 'deleteItem':
-          await deleteItemBackend(this._workspaceRoot, message.itemId);
+          await deleteItemById(this._workspaceRoot, message.itemId);
           this._panel.webview.postMessage({
             type: 'itemDeleted',
             itemId: message.itemId,
@@ -134,7 +134,7 @@ export class KanbanPanel {
     if (!this._workspaceRoot) return;
 
     try {
-      const boardData = await loadAllItems(this._workspaceRoot);
+      const boardData = await loadBoardData(this._workspaceRoot);
       this._panel.webview.postMessage({
         type: 'init',
         data: boardData,
@@ -155,7 +155,7 @@ export class KanbanPanel {
     if (!this._workspaceRoot) return;
 
     try {
-      const item = await readItem(this._workspaceRoot, itemId);
+      const item = await readItemById(this._workspaceRoot, itemId);
       if (!item) {
         vscode.window.showErrorMessage(`Item ${itemId} not found`);
         return;
@@ -171,7 +171,7 @@ export class KanbanPanel {
         this._workspaceRoot,
         '.llmkanban',
         stageFolderName,
-        `${item.id}.md`
+        `${itemId}.md`
       );
 
       const doc = await vscode.workspace.openTextDocument(filePath);
@@ -188,7 +188,7 @@ export class KanbanPanel {
     if (!this._workspaceRoot) return;
 
     try {
-      const item = await readItem(this._workspaceRoot, itemId);
+      const item = await readItemById(this._workspaceRoot, itemId);
       if (!item) {
         vscode.window.showErrorMessage(`Item ${itemId} not found`);
         return;
@@ -197,7 +197,8 @@ export class KanbanPanel {
       let textToCopy = '';
       switch (mode) {
         case 'full':
-          textToCopy = serializeItemToMarkdown(item);
+          // For full mode, reconstruct from managed section and user content
+          textToCopy = (item.managedSection || '') + '\n' + (item.userContent || '');
           break;
         case 'context':
           textToCopy = (item.managedSection || '') + '\n\n' + (item.userContent || '');

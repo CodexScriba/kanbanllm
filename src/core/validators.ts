@@ -1,8 +1,11 @@
 // lib/validators.ts
 import { z } from 'zod';
-import { FrontmatterSchema, normalizeStageValue } from './parser';
+import { FrontmatterSchema as ParserFrontmatterSchema, normalizeStageValue } from './parser';
 import { findItemById } from './fs-adapter';
 import type { Stage, ItemType, Frontmatter } from './types';
+
+// Re-export FrontmatterSchema for convenience
+export { ParserFrontmatterSchema as FrontmatterSchema };
 
 const VALID_STAGES: Stage[] = ['queue', 'planning', 'coding', 'auditing', 'completed'];
 const VALID_ITEM_TYPES: ItemType[] = ['phase', 'task'];
@@ -47,14 +50,14 @@ export function validateFilename(filename: string): boolean {
  */
 export function validateFrontmatter(data: unknown): Frontmatter {
   try {
-    const parsed = FrontmatterSchema.parse(data);
+    const parsed = ParserFrontmatterSchema.parse(data);
     return {
       ...parsed,
       stage: normalizeStageValue(parsed.stage),
     } as Frontmatter;
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errors = error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+      const errors = error.issues.map((err: z.ZodIssue) => `${err.path.join('.')}: ${err.message}`).join(', ');
       throw new Error(`Invalid frontmatter: ${errors}`);
     }
     throw error;
@@ -202,3 +205,6 @@ export const UpdateItemSchema = z.object({
 }).strict(); // Prevent unexpected fields
 
 export type UpdateItemData = z.infer<typeof UpdateItemSchema>;
+
+// Export alias for backward compatibility
+export const sanitizeInput = sanitizeTitle;

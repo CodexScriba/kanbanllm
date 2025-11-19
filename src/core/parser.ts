@@ -201,3 +201,7 @@ export function validateFrontmatterString(content: string): boolean {
     return false;
   }
 }
+
+// Export aliases for backward compatibility
+export const parseMarkdownToItem = parseItem;
+export const serializeItemToMarkdown = serializeItem;

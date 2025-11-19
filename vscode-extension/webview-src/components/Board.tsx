@@ -61,7 +61,7 @@ const Board: React.FC<BoardProps> = ({ data, onMoveItem, onOpenItem, onDeleteIte
 
     // Find current stage of the item
     const currentStage = Object.entries(data).find(([stage, items]) =>
-      items.some(item => item.id === itemId)
+      items.some((item: Item) => item.id === itemId)
     )?.[0] as Stage | undefined;
 
     if (currentStage && targetStage && currentStage !== targetStage) {

@@ -2,15 +2,16 @@
   "compilerOptions": {
     "module": "commonjs",
     "target": "ES2020",
-    "lib": ["ES2020"],
+    "lib": ["ES2020", "DOM"],
     "outDir": "out",
     "strict": true,
     "esModuleInterop": true,
     "moduleResolution": "node",
     "sourceMap": true,
-    "types": ["vscode", "node"],
-    "skipLibCheck": true
+    "types": ["vscode", "node", "jest"],
+    "skipLibCheck": true,
+    "jsx": "react"
   },
-  "include": ["src", "../src/core"],
-  "exclude": ["../ src/core/__tests__", "**/*.test.ts", "**/*.spec.ts"]
+  "include": ["src", "../src/core", "webview-src"],
+  "exclude": ["../src/core/__tests__", "**/*.test.ts", "**/*.spec.ts", "node_modules"]
 }

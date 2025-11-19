@@ -3,8 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import { SidebarProvider } from './sidebar/SidebarProvider';
 import { KanbanPanel } from './webview/KanbanPanel';
-import { createItemWithContext } from '../../src/core/context-injector';
-import { moveItem, deleteItem, readItem, loadAllItems } from '../../src/core/fs-adapter';
+import { moveItemToStage, deleteItemById, readItemById, loadBoardData, createItem, type FlatItem } from '../../src/core/fs-adapter';
 import { serializeItemToMarkdown } from '../../src/core/parser';
 import { Stage } from '../../src/core/types';
 
@@ -161,7 +160,7 @@ export function activate(context: vscode.ExtensionContext) {
       if (!workspaceRoot) return;
 
       try {
-        const item = await readItem(workspaceRoot, itemId);
+        const item = await readItemById(workspaceRoot, itemId);
         if (!item) {
           vscode.window.showErrorMessage(`Item ${itemId} not found`);
           return;
@@ -300,7 +299,7 @@ async function createTaskWorkflow(workspaceRoot: string): Promise<void> {
   if (!stageChoice) return;
 
   // Step 3: Select phase (optional)
-  const boardData = await loadAllItems(workspaceRoot);
+  const boardData = await loadBoardData(workspaceRoot);
   const allPhases = Object.values(boardData)
     .flat()
     .filter(item => item.type === 'phase');
@@ -327,7 +326,7 @@ async function createTaskWorkflow(workspaceRoot: string): Promise<void> {
     : [];
 
   // Create the task
-  await createItemWithContext(workspaceRoot, {
+  await createItem(workspaceRoot, {
     title: title.trim(),
     stage: stageChoice.value,
     type: 'task',
@@ -374,7 +373,7 @@ async function createPhaseWorkflow(workspaceRoot: string): Promise<void> {
     : [];
 
   // Create the phase
-  const item = await createItemWithContext(workspaceRoot, {
+  const item = await createItem(workspaceRoot, {
     title: title.trim(),
     stage: stageChoice.value,
     type: 'phase',
@@ -399,7 +398,7 @@ async function createPhaseWorkflow(workspaceRoot: string): Promise<void> {
 async function moveTaskWorkflow(workspaceRoot: string, itemId?: string): Promise<void> {
   // If no itemId provided, ask user to select
   if (!itemId) {
-    const boardData = await loadAllItems(workspaceRoot);
+    const boardData = await loadBoardData(workspaceRoot);
     const allItems = Object.values(boardData).flat();
 
     const itemOptions = allItems.map(item => ({
@@ -417,7 +416,7 @@ async function moveTaskWorkflow(workspaceRoot: string, itemId?: string): Promise
   }
 
   // Get current item
-  const item = await readItem(workspaceRoot, itemId);
+  const item = await readItemById(workspaceRoot, itemId!);
   if (!item) {
     vscode.window.showErrorMessage('Item not found');
     return;
@@ -439,14 +438,14 @@ async function moveTaskWorkflow(workspaceRoot: string, itemId?: string): Promise
   if (!stageChoice) return;
 
   // Move the item
-  await moveItem(workspaceRoot, itemId, stageChoice.value);
+  await moveItemToStage(workspaceRoot, itemId!, stageChoice.value);
   vscode.window.showInformationMessage(`Moved "${item.title}" to ${stageChoice.label}`);
 }
 
 async function copyWithContextWorkflow(workspaceRoot: string, itemId?: string): Promise<void> {
   // If no itemId provided, ask user to select
   if (!itemId) {
-    const boardData = await loadAllItems(workspaceRoot);
+    const boardData = await loadBoardData(workspaceRoot);
     const allItems = Object.values(boardData).flat();
 
     const itemOptions = allItems.map(item => ({
@@ -464,7 +463,7 @@ async function copyWithContextWorkflow(workspaceRoot: string, itemId?: string): 
   }
 
   // Get item
-  const item = await readItem(workspaceRoot, itemId);
+  const item = await readItemById(workspaceRoot, itemId!);
   if (!item) {
     vscode.window.showErrorMessage('Item not found');
     return;
@@ -499,7 +498,8 @@ async function copyWithContextWorkflow(workspaceRoot: string, itemId?: string): 
   let textToCopy = '';
   switch (modeChoice.value) {
     case 'full':
-      textToCopy = serializeItemToMarkdown(item);
+      // For full mode, reconstruct from managed section and user content
+      textToCopy = (item.managedSection || '') + '\n' + (item.userContent || '');
       break;
     case 'context':
       textToCopy = (item.managedSection || '') + '\n\n' + (item.userContent || '');
@@ -518,7 +518,7 @@ async function copyWithContextWorkflow(workspaceRoot: string, itemId?: string): 
 async function deleteItemWorkflow(workspaceRoot: string, itemId?: string): Promise<void> {
   // If no itemId provided, ask user to select
   if (!itemId) {
-    const boardData = await loadAllItems(workspaceRoot);
+    const boardData = await loadBoardData(workspaceRoot);
     const allItems = Object.values(boardData).flat();
 
     const itemOptions = allItems.map(item => ({
@@ -536,7 +536,7 @@ async function deleteItemWorkflow(workspaceRoot: string, itemId?: string): Promi
   }
 
   // Get item for confirmation
-  const item = await readItem(workspaceRoot, itemId);
+  const item = await readItemById(workspaceRoot, itemId!);
   if (!item) {
     vscode.window.showErrorMessage('Item not found');
     return;
@@ -552,7 +552,7 @@ async function deleteItemWorkflow(workspaceRoot: string, itemId?: string): Promi
   if (confirm !== 'Delete') return;
 
   // Delete the item
-  await deleteItem(workspaceRoot, itemId);
+  await deleteItemById(workspaceRoot, itemId!);
   vscode.window.showInformationMessage(`Deleted "${item.title}"`);
 }
 
