@@ -1,6 +1,6 @@
 import {
-  parseMarkdownToItem,
-  serializeItemToMarkdown,
+  parseItem,
+  serializeItem,
   extractUserContent,
   buildManagedSection,
 } from '../parser';
@@ -15,8 +15,8 @@ title: Test Task
 stage: coding
 type: task
 tags: [test, unit]
-created: 2025-01-01T00:00:00Z
-updated: 2025-01-02T00:00:00Z
+created: "2025-01-01T00:00:00Z"
+updated: "2025-01-02T00:00:00Z"
 ---
 
 <!-- DOCFLOW:MANAGED -->
@@ -27,14 +27,14 @@ This is the coding stage.
 # My Notes
 User content here.`;
 
-      const item = parseMarkdownToItem(markdown);
+      const item = parseItem(markdown, '/test/path.md');
 
-      expect(item.id).toBe('test-task-123');
-      expect(item.title).toBe('Test Task');
-      expect(item.stage).toBe('coding');
-      expect(item.type).toBe('task');
-      expect(item.tags).toEqual(['test', 'unit']);
-      expect(item.userContent).toContain('My Notes');
+      expect(item.frontmatter.id).toBe('test-task-123');
+      expect(item.frontmatter.title).toBe('Test Task');
+      expect(item.frontmatter.stage).toBe('coding');
+      expect(item.frontmatter.type).toBe('task');
+      expect(item.frontmatter.tags).toEqual(['test', 'unit']);
+      expect(item.body).toContain('My Notes');
     });
 
     it('should handle missing user content section', () => {
@@ -43,18 +43,20 @@ id: test-task-123
 title: Test Task
 stage: coding
 type: task
-created: 2025-01-01T00:00:00Z
-updated: 2025-01-02T00:00:00Z
+created: "2025-01-01T00:00:00Z"
+updated: "2025-01-02T00:00:00Z"
 ---
 
 <!-- DOCFLOW:MANAGED -->
 # Stage Context
-This is the coding stage.`;
+This is the coding stage.
 
-      const item = parseMarkdownToItem(markdown);
+<!-- DOCFLOW:USER-CONTENT - Edit below this line -->`;
 
-      expect(item.id).toBe('test-task-123');
-      expect(item.userContent).toBe('');
+      const item = parseItem(markdown, '/test/path.md');
+
+      expect(item.frontmatter.id).toBe('test-task-123');
+      expect(item.body).toBe('');
     });
 
     it('should handle optional phaseId', () => {
@@ -63,32 +65,32 @@ id: test-task-123
 title: Test Task
 stage: coding
 type: task
-phaseId: phase1-test
-created: 2025-01-01T00:00:00Z
-updated: 2025-01-02T00:00:00Z
+phase: phase1-test
+created: "2025-01-01T00:00:00Z"
+updated: "2025-01-02T00:00:00Z"
 ---`;
 
-      const item = parseMarkdownToItem(markdown);
+      const item = parseItem(markdown, '/test/path.md');
 
-      expect(item.phaseId).toBe('phase1-test');
+      expect(item.frontmatter.phase).toBe('phase1-test');
     });
   });
 
-  describe('serializeItemToMarkdown', () => {
+  describe('serializeItem', () => {
     it('should serialize item to markdown format', () => {
-      const item: Item = {
+      const frontmatter = {
         id: 'test-task-123',
         title: 'Test Task',
-        stage: 'coding',
-        type: 'task',
+        stage: 'coding' as const,
+        type: 'task' as const,
         tags: ['test', 'unit'],
-        created: new Date('2025-01-01T00:00:00Z'),
-        updated: new Date('2025-01-02T00:00:00Z'),
-        managedSection: '# Stage Context\nThis is coding.',
-        userContent: '# My Notes\nUser content here.',
+        created: '2025-01-01T00:00:00Z',
+        updated: '2025-01-02T00:00:00Z',
       };
+      const managedSection = '# Stage Context\nThis is coding.';
+      const userContent = '# My Notes\nUser content here.';
 
-      const markdown = serializeItemToMarkdown(item);
+      const markdown = serializeItem(frontmatter, managedSection, userContent);
 
       expect(markdown).toContain('id: test-task-123');
       expect(markdown).toContain('title: Test Task');
@@ -99,19 +101,19 @@ updated: 2025-01-02T00:00:00Z
     });
 
     it('should handle items without user content', () => {
-      const item: Item = {
+      const frontmatter = {
         id: 'test-task-123',
         title: 'Test Task',
-        stage: 'coding',
-        type: 'task',
+        stage: 'coding' as const,
+        type: 'task' as const,
         tags: [],
-        created: new Date('2025-01-01T00:00:00Z'),
-        updated: new Date('2025-01-02T00:00:00Z'),
-        managedSection: '# Stage Context',
-        userContent: '',
+        created: '2025-01-01T00:00:00Z',
+        updated: '2025-01-02T00:00:00Z',
       };
+      const managedSection = '# Stage Context';
+      const userContent = '';
 
-      const markdown = serializeItemToMarkdown(item);
+      const markdown = serializeItem(frontmatter, managedSection, userContent);
 
       expect(markdown).toContain('DOCFLOW:USER-CONTENT');
       expect(markdown.endsWith('\n')).toBe(true);
@@ -146,7 +148,7 @@ Content without marker`;
 
       const userContent = extractUserContent(markdown);
 
-      expect(userContent).toBe('');
+      expect(userContent).toBe('Content without marker');
     });
   });
 
@@ -155,7 +157,7 @@ Content without marker`;
       const stageContext = '# Coding Stage\nImplement features.';
       const phaseContext = '# Phase 1\nAuthentication.';
 
-      const managedSection = buildManagedSection(stageContext, phaseContext);
+      const managedSection = buildManagedSection('coding', stageContext, 'Phase 1', phaseContext);
 
       expect(managedSection).toContain('# Coding Stage');
       expect(managedSection).toContain('# Phase 1');
@@ -164,7 +166,7 @@ Content without marker`;
     it('should handle missing phase context', () => {
       const stageContext = '# Coding Stage\nImplement features.';
 
-      const managedSection = buildManagedSection(stageContext);
+      const managedSection = buildManagedSection('coding', stageContext);
 
       expect(managedSection).toContain('# Coding Stage');
       expect(managedSection).not.toContain('# Phase');

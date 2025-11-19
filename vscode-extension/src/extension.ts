@@ -4,7 +4,6 @@ import * as fs from 'fs/promises';
 import { SidebarProvider } from './sidebar/SidebarProvider';
 import { KanbanPanel } from './webview/KanbanPanel';
 import { moveItemToStage, deleteItemById, readItemById, loadBoardData, createItem, type FlatItem } from '../../src/core/fs-adapter';
-import { serializeItemToMarkdown } from '../../src/core/parser';
 import { Stage } from '../../src/core/types';
 
 /**

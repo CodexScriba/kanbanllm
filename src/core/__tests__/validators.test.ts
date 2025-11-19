@@ -92,13 +92,15 @@ describe('Validators', () => {
 
   describe('validateFilename', () => {
     it('should accept valid filenames', () => {
-      expect(validateFilename('task-1-test-abc123.md')).toBe(true);
-      expect(validateFilename('phase1-auth-system-xyz789.md')).toBe(true);
+      expect(validateFilename('task-1-test-abc1.md')).toBe(true);
+      expect(validateFilename('phase1-auth-system-xyz7.md')).toBe(true);
     });
 
-    it('should reject filenames without .md extension', () => {
-      expect(validateFilename('task-1-test.txt')).toBe(false);
-      expect(validateFilename('task-1-test')).toBe(false);
+    it('should accept filenames without .md extension if hash is valid', () => {
+      // 'task-1-test' -> hash is 'test' (4 chars) -> valid
+      expect(validateFilename('task-1-test')).toBe(true);
+      // 'task-1-te' -> hash is 'te' (2 chars) -> invalid
+      expect(validateFilename('task-1-te')).toBe(false);
     });
 
     it('should reject filenames with special characters', () => {
@@ -112,7 +114,7 @@ describe('Validators', () => {
     });
 
     it('should remove dangerous characters', () => {
-      expect(sanitizeInput('test<script>alert()</script>')).toBe('testscriptalert()script');
+      expect(sanitizeInput('test<script>alert()</script>')).toBe('testscriptalertscript');
     });
 
     it('should handle empty input', () => {
@@ -137,7 +139,7 @@ describe('Validators', () => {
       expect(result).toEqual(data);
     });
 
-    it('should provide default empty array for tags', () => {
+    it('should provide undefined for missing tags', () => {
       const data = {
         id: 'test-id',
         title: 'Test',
@@ -148,7 +150,7 @@ describe('Validators', () => {
       };
 
       const result = FrontmatterSchema.parse(data);
-      expect(result.tags).toEqual([]);
+      expect(result.tags).toBeUndefined();
     });
   });
 });

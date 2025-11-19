@@ -11,41 +11,42 @@
 
 ### Project Status
 
-The KanbanLLM project has **excellent architectural planning** and **production-ready backend logic**, but is in the **early stages of UI development**. The core functionality exists but is not yet connected to the VSCode extension interface.
+The KanbanLLM project now has a **fully wired VSCode extension** with the React/DnD webview, live tree view, and command workflows in place. Backend libraries remain solid, and the current focus is polishing UX, hardening error handling, and expanding the test/documentation surface so that real users can trial the experience end-to-end.
 
 **What Works:**
-- ✅ Complete core backend (parsing, validation, file operations, context injection)
-- ✅ Comprehensive design documentation
-- ✅ Basic extension infrastructure (sidebar, webview shell)
+- ✅ Complete core backend (parsing, validation, context injection, file ops)
+- ✅ React webview with drag-and-drop board, filters, and live data feed
+- ✅ Sidebar tree + command palette flows (create/move/copy/delete/initialize)
+- ✅ File watcher refresh + clipboard workflows
+- ✅ Foundational Jest coverage for parser/validator logic
 
-**What's Missing:**
-- ❌ Visual Kanban board UI (6 columns, cards, drag-and-drop)
-- ❌ React component implementation
-- ❌ All user commands (create task, move task, copy with context)
-- ❌ Data loading and file watcher integration
-- ❌ Testing suite
-- ❌ User documentation
+**What's Missing / Needs Hardening:**
+- ⚠️ Extended QA (integration tests, large board stress tests)
+- ⚠️ Polished modals + inline validation UX inside the webview
+- ⚠️ User-facing docs & onboarding guidance
+- ⚠️ Configurability, accessibility audits, and packaging for marketplace
+- ⚠️ Resilience around conflict handling and error surfacing
 
 ### Completion by Phase
 
 | Phase | Status | Completion | Key Findings |
 |-------|--------|------------|--------------|
-| Phase 1: Design Foundation | ✅ Complete | 100% | Excellent comprehensive documentation |
-| Phase 2: Visual Components | 🟡 In Progress | 10% | Tasks 0-1 done, 9 tasks remaining |
-| Phase 3: User Commands | ❌ Not Started | 0% | All command integration pending |
-| Phase 4: Backend Logic | 🟢 50% Complete | 50% | Core logic done, integration missing |
-| Phase 5: Context Management | 🟢 50% Complete | 50% | Backend done, UI features missing |
-| Phase 6: Polish & Testing | ❌ Not Started | 0% | No tests, no config options yet |
-| Phase 7: Advanced Features | ❌ Not Started | 0% | Future enhancements |
+| Phase 1: Design Foundation | ✅ Complete | 100% | Documentation + personas fully authored |
+| Phase 2: Visual Components | 🟢 Mostly Complete | 80% | React board, DnD, search/filter done; creation modals pending |
+| Phase 3: User Commands | 🟢 Mostly Complete | 75% | Commands + quick picks wired; richer context menus & undo left |
+| Phase 4: Backend Logic | 🟢 Stable | 80% | Core libraries shipped; needs perf + telemetry |
+| Phase 5: Context Management | 🟡 Partial | 60% | Backend ready; UI shortcuts + editors outstanding |
+| Phase 6: Polish & Testing | 🔶 Planned | 15% | Unit tests exist but no integration/packaging work yet |
+| Phase 7: Advanced Features | ❌ Not Started | 0% | Reserved for post-MVP |
 
 ### Critical Metrics
 
-- **Lines of Code:** ~2,000 (core) + ~300 (extension)
+- **Lines of Code:** ~2,000 (core) + ~1,200 (extension + webview)
 - **Files Created:** 15 implementation files, 5 documentation files
-- **Test Coverage:** 0% (no tests written)
-- **Commands Implemented:** 2 of 7 planned core commands
-- **UI Components:** 0 of 20+ planned components
-- **Documentation:** 4,160 lines of design docs ✅
+- **Automated Tests:** Parser + validator Jest suites (core) ✅; extension/webview tests pending
+- **Commands Implemented:** 8 registered commands (init/create/move/copy/delete/refresh/open/settings)
+- **UI Components:** Board + Column + Card + controls + loading states live
+- **Documentation:** 4,160 lines of design docs ✅ (needs user-facing guide)
 
 ---
 
@@ -76,7 +77,7 @@ The KanbanLLM project has **excellent architectural planning** and **production-
 **Location:** `docs/context/visual-interface-design.md` (970 lines)
 
 **Implemented:**
-- ✅ 6-column Kanban board layout specified (Chat, Queue, Plan, Code, Audit, Completed)
+- ✅ 5-column Kanban board layout specified (Queue, Planning, Coding, Auditing, Completed)
 - ✅ Task card anatomy designed with all metadata fields
 - ✅ Color scheme defined for light and dark modes
 - ✅ Empty states and loading indicators designed
@@ -164,10 +165,10 @@ The KanbanLLM project has **excellent architectural planning** and **production-
 
 ---
 
-## Phase 2: Visual Components & Frontend Development 🟡 **IN PROGRESS**
+## Phase 2: Visual Components & Frontend Development 🟢 **MOSTLY COMPLETE**
 
-**Status:** 10% Complete (2/11 tasks)
-**Current Focus:** Task 2 (Board Layout Shell) next
+**Status:** ~80% Complete (core board + controls shipped)
+**Current Focus:** Creation modals + advanced polish
 
 ### ✅ Task 0: Basic Sidebar View
 
@@ -236,215 +237,89 @@ class KanbanPanel {
 
 ---
 
-### ❌ Task 2: Build Kanban Board Components
+### ✅ Task 2: Build Kanban Board Components
 
-**Status:** Not Started
-**Priority:** NEXT TASK
-**Estimated Effort:** 4-5 hours
+**Status:** Complete
+**Implementation:** `vscode-extension/webview-src/components/Board.tsx`, `Column.tsx`, `Card.tsx`, and `styles/board.css`
 
-**Required:**
-- ❌ Create HTML/CSS for 6 columns (Chat, Queue, Plan, Code, Audit, Completed)
-- ❌ Add column headers with icons (💬, 📋, 📝, 💻, 🔍, ✅)
-- ❌ Create placeholder card components
-- ❌ Implement horizontal scrolling container
-- ❌ Add responsive width constraints
-
-**Expected Outcome:**
-- Static 6-column layout visible in webview
-- Column headers styled per design system
-- Placeholder cards in each column
-- Scrollable if columns exceed viewport width
-
-**Next Steps:**
-1. Update `KanbanPanel._getHtmlForWebview()` with board HTML
-2. Add CSS for grid layout
-3. Test in light and dark mode
-4. Verify scrolling behavior
+**Highlights:**
+- ✅ 5-column layout (Queue, Planning, Coding, Auditing, Completed) with sticky headers
+- ✅ Drag overlay + hover/empty states
+- ✅ Responsive horizontal scrolling container with custom scrollbars
+- ✅ Card components with icons, tags, metadata rows, and contextual actions
+- ✅ Theme-aware CSS tokens backed by VSCode variables
 
 ---
 
-### ❌ Task 3: React Environment Setup
+### ✅ Task 3: React Environment Setup
 
-**Status:** Not Started
-**Priority:** High
-**Estimated Effort:** 4-6 hours
+**Status:** Complete
+**Implementation:** `vscode-extension/webpack.config.js`, `webview-src/index.tsx`, `package.json` scripts
 
-**Required:**
-- ❌ Install React, ReactDOM, TypeScript types
-- ❌ Configure webpack for webview bundling
-- ❌ Setup JSX/TSX compilation
-- ❌ Create entry point for React app
-- ❌ Configure hot reload for development
-- ❌ Update `package.json` with build scripts
-
-**Dependencies:**
-```json
-{
-  "react": "^18.0.0",
-  "react-dom": "^18.0.0",
-  "@types/react": "^18.0.0",
-  "@types/react-dom": "^18.0.0",
-  "webpack": "^5.0.0",
-  "ts-loader": "^9.0.0"
-}
-```
-
-**Architecture:**
-```
-webview-src/
-  ├── index.tsx          # React entry point
-  ├── App.tsx            # Root component
-  ├── components/
-  │   ├── Board.tsx
-  │   ├── Column.tsx
-  │   └── Card.tsx
-  └── styles/
-      └── board.css
-```
+**Highlights:**
+- ✅ React 18 + TypeScript pipeline bundled via webpack + ts-loader
+- ✅ CSS pipeline (style-loader/css-loader) + VSCode CSP nonce handling
+- ✅ `npm run compile`/`npm run watch` for combined tsc + webpack workflows
+- ✅ `webview-src` structure matches planned architecture
 
 ---
 
-### ❌ Task 4: Card Component with Full Design
+### ✅ Task 4: Card Component with Full Design
 
-**Status:** Not Started
-**Estimated Effort:** 4-5 hours
+**Status:** Complete
+**Implementation:** `Card.tsx`, `styles/board.css`
 
-**Required Components:**
-- ❌ Card header with title
-- ❌ Tag badges (colored pills)
-- ❌ Metadata display (created date, updated date)
-- ❌ Phase/task visual distinction (icon + border)
-- ❌ Hover state with elevation
-- ❌ Click handler for opening file
-
-**Card Anatomy (per design):**
-```tsx
-<div className="kanban-card" data-type="task">
-  <div className="card-header">
-    <span className="card-icon">📦 or ✅</span>
-    <h3 className="card-title">Task Title</h3>
-  </div>
-  <div className="card-tags">
-    <span className="tag">backend</span>
-    <span className="tag">api</span>
-  </div>
-  <div className="card-metadata">
-    <span>Created: Nov 13, 2025</span>
-    <span>Updated: Nov 17, 2025</span>
-  </div>
-</div>
-```
-
-**Styling Requirements:**
-- Min height: 120px
-- Padding: 12px
-- Border radius: 8px
-- Shadow on hover: 0 4px 8px rgba(0,0,0,0.1)
-- Phase border: 3px left border in accent color
+**Highlights:**
+- ✅ Phase/task icons + colored borders + hover elevation
+- ✅ Tags, metadata rows, relative time display, inline actions
+- ✅ Click-through to open file, guarded against accidental drags
+- ✅ Delete CTA wired to extension messaging
 
 ---
 
-### ❌ Task 5: Implement Drag-and-Drop UI
+### ✅ Task 5: Implement Drag-and-Drop UI
 
-**Status:** Not Started
-**Estimated Effort:** 6-8 hours
+**Status:** Complete
+**Implementation:** `Board.tsx`, `Column.tsx`, `Card.tsx`
 
-**Required:**
-- ❌ Install `@dnd-kit/core`, `@dnd-kit/sortable`
-- ❌ Wrap board in `DndContext`
-- ❌ Make cards draggable with `useDraggable`
-- ❌ Make columns droppable with `useDroppable`
-- ❌ Add visual feedback (dragging overlay, drop zone highlight)
-- ❌ Handle drop events and message to extension
-- ❌ Implement collision detection
-- ❌ Add drag handle (entire card vs handle icon)
-
-**Event Flow:**
-1. User drags card from "Queue" column
-2. Webview shows drag overlay
-3. Drop zones in other columns highlight
-4. User drops in "Coding" column
-5. Webview sends message: `{ type: 'moveItem', itemId, newStage: 'coding' }`
-6. Extension updates file system (moves file)
-7. Extension sends confirmation back
-8. Webview updates UI optimistically
+**Highlights:**
+- ✅ `@dnd-kit/core` + `@dnd-kit/sortable` used with pointer sensor + closestCorners
+- ✅ Columns act as droppable zones with active highlighting
+- ✅ Drag overlay mirrors card styling; optimistic updates in App state
+- ✅ Messages dispatched to extension to persist stage changes
 
 ---
 
-### ❌ Task 6: Add Search and Filter UI
+### ✅ Task 6: Add Search and Filter UI
 
-**Status:** Not Started
-**Estimated Effort:** 5-6 hours
+**Status:** Complete
+**Implementation:** `App.tsx` (controls) + `styles/board.css`
 
-**Required:**
-- ❌ Search bar component (top of board)
-- ❌ Filter dropdowns (by tag, by phase)
-- ❌ Sort options (created date, updated date, title)
-- ❌ "Clear filters" button
-- ❌ Visual feedback (filtered count)
-- ❌ Keyboard focus management
-
-**Filter Panel Design:**
-```tsx
-<div className="board-controls">
-  <input type="text" placeholder="Search tasks..." />
-  <select name="filterByTag">
-    <option>All Tags</option>
-    <option>backend</option>
-    <option>frontend</option>
-  </select>
-  <select name="filterByPhase">
-    <option>All Phases</option>
-    <option>Phase 1: Foundation</option>
-    <option>Phase 2: UI</option>
-  </select>
-  <select name="sortBy">
-    <option>Updated (newest)</option>
-    <option>Created (newest)</option>
-    <option>Title (A-Z)</option>
-  </select>
-  <button>Clear All</button>
-</div>
-```
+**Highlights:**
+- ✅ Search input + tag + phase filters + sort dropdown
+- ✅ Clear filters button visible only when active filters applied
+- ✅ Derived lists update board rendering in real time
+- ✅ Controls use VSCode theme variables + keyboard focus states
 
 ---
 
-### ❌ Task 7: Implement Loading States
+### 🟡 Task 7: Implement Loading States
 
-**Status:** Not Started
-**Estimated Effort:** 3-4 hours
+**Status:** Partial
 
-**Required:**
-- ❌ Skeleton screens for card placeholders
-- ❌ Spinner for async operations
-- ❌ Progress bars for bulk operations
-- ❌ Optimistic UI updates (move before confirmation)
-- ❌ Error state displays with retry button
+**Shipped:** Global loading spinner + optimistic item add/remove/move logic in `App.tsx`; drag overlay + drop-zone highlight states.
 
-**Loading States:**
-1. **Initial Load:** Skeleton cards in all columns
-2. **Moving Item:** Card dims with spinner overlay
-3. **Creating Item:** New card appears with loading state
-4. **Deleting Item:** Card fades out optimistically
-5. **Error:** Red border + error icon + retry button
+**Remaining:** Skeleton rows, inline retry UI, per-card progress overlays.
 
 ---
 
-### ❌ Task 8: Polish Visual Details
+### 🟡 Task 8: Polish Visual Details
 
-**Status:** Not Started
-**Estimated Effort:** 4-5 hours
+**Status:** Partial
 
-**Required:**
-- ❌ Micro-animations (card slide on move, smooth transitions)
-- ❌ Responsive layout (column width adjustments)
-- ❌ Focus states for keyboard navigation
-- ❌ Visual hierarchy (shadows, borders, elevation)
-- ❌ Dark mode testing and adjustments
+**Shipped:** Hover transitions, drag opacity, responsive scrollbar styling, focus ring support, VSCode theme integration, reduced-motion guardrails.
 
-**Animations:**
-- Card drag: Scale(1.05) + Shadow elevation
-- Card drop: Smooth position transition (200ms ease)
+**Remaining:** Dark-mode fine tuning, enhanced animations, card stacking transitions on large moves.
 - Hover: Border color change (150ms ease)
 - Column highlight: Background color fade (200ms)
 
@@ -490,87 +365,33 @@ webview-src/
 
 ---
 
-## Phase 3: User Commands & Interaction Logic ❌ **NOT STARTED**
+## Phase 3: User Commands & Interaction Logic 🟢 **MOSTLY COMPLETE**
 
-**Status:** 0% Complete (0/7 tasks)
-**Dependency:** Phase 2 (Tasks 2-4 needed first)
+**Status:** ~75% Complete (command palette + workflows shipped)
 
-### ❌ Task 1: Define Command Palette Commands
+### ✅ Task 1: Define Command Palette Commands
+- `vscode-extension/package.json` contributes Open Board, Initialize Workspace, Create Task, Create Phase, Move Task, Copy with Context, Delete Item, Refresh Sidebar, and Settings.
+- `src/extension.ts` registers every command with handlers + notifications.
 
-**Status:** Partially Complete (2/7 commands registered)
+### ✅ Task 2: Implement Quick Input Flows
+- `createTaskWorkflow` and `createPhaseWorkflow` prompt for title, stage, optional phase/tags.
+- Phase pickers source live data via `loadBoardData`; cancellation gracefully aborts.
 
-**Implemented Commands:**
-- ✅ `llmKanban.openBoard` - Opens Kanban webview (working)
-- ✅ `llmKanban.openSettings` - Shows placeholder notification
+### 🟡 Task 3: Build Context Menu Integrations
+- Tree view context menu wired for move/copy/delete (see `package.json` `view/item/context`).
+- Explorer/editor menus + keyboard shortcuts tracked for polish.
 
-**Missing Commands:**
-- ❌ `llmKanban.initializeWorkspace` - Create `.llmkanban/` structure
-- ❌ `llmKanban.createTask` - Quick input flow
-- ❌ `llmKanban.createPhase` - Quick input flow
-- ❌ `llmKanban.moveTask` - Stage picker
-- ❌ `llmKanban.copyWithContext` - Mode picker + clipboard
-- ❌ `llmKanban.deleteItem` - Confirmation dialog
-- ❌ `llmKanban.refreshBoard` - Reload from disk
+### ✅ Task 4: Move Task Workflow
+- Quick pick stage selector, notifications, and backend move invocation implemented in `moveTaskWorkflow`.
 
-**Registration Location:** `vscode-extension/package.json` (contributes.commands)
+### ✅ Task 5: Copy with Context Feature
+- Command + webview support the three planned copy modes, clipboard integration, and toast feedback.
 
----
+### ✅ Task 6: Workspace Initialization Flow
+- `initializeWorkspace` scaffolds `.llmkanban`, creates stage context files, and writes README guidance.
 
-### ❌ Task 2: Implement Quick Input Flows
-
-**Status:** Not Started
-
-**Required Flows:**
-1. **Create Task:**
-   - Step 1: Input title
-   - Step 2: Select parent phase (or "No phase")
-   - Step 3: Select target stage (Queue, Planning, etc.)
-   - Step 4: Add tags (comma-separated, optional)
-   - Step 5: Confirm and create file
-
-2. **Create Phase:**
-   - Step 1: Input title
-   - Step 2: Select target stage
-   - Step 3: Add tags (optional)
-   - Step 4: Create phase context file option
-   - Step 5: Confirm and create
-
-**VSCode APIs Needed:**
-- `vscode.window.showInputBox()` - Text input
-- `vscode.window.showQuickPick()` - Selection lists
-- Input validation with `validateInput` callback
-
----
-
-### ❌ Task 3: Build Context Menu Integrations
-
-**Status:** Not Started
-
-**Required Context Menus:**
-- ❌ Tree view item context menu (right-click on task/phase)
-- ❌ Editor context menu (right-click in `.md` files)
-- ❌ Explorer context menu (right-click on `.md` files in file tree)
-
-**Menu Items:**
-- "Move to Stage >" (submenu with stage options)
-- "Copy with Context" (submenu with 3 modes)
-- "Delete Item" (with confirmation)
-- "Edit Metadata"
-- "Open in Editor"
-
-**Configuration Location:** `package.json` (contributes.menus)
-
----
-
-### ❌ Task 4-7: Other Command Tasks
-
-**Status:** Not Started
-
-**Remaining:**
-- Task 4: Move Task Workflow (stage picker + confirmation)
-- Task 5: Copy with Context (3 modes implementation)
-- Task 6: Workspace Initialization (folder creation wizard)
-- Task 7: File Watcher (fs.watch integration)
+### ✅ Task 7: File Watcher Triggers
+- `vscode.workspace.createFileSystemWatcher` monitors `.llmkanban/**/*.md` and refreshes the sidebar automatically.
 
 ---
 
@@ -1411,7 +1232,7 @@ All Phase 7 tasks are planned for post-MVP based on user feedback. None are star
 ### Immediate (This Week)
 
 1. **✅ Complete Phase 2 Task 2: Board Layout Shell** (4-5 hours)
-   - Create 6-column HTML/CSS layout
+   - Create 5-column HTML/CSS layout
    - Add column headers with icons
    - Test scrolling behavior
    - File: `vscode-extension/src/webview/KanbanPanel.ts`
