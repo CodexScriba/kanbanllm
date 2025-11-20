@@ -7,10 +7,11 @@ const vscode = acquireVsCodeApi();
 
 const App: React.FC = () => {
   const [boardData, setBoardData] = useState<BoardData>({
+    chat: [],
     queue: [],
-    planning: [],
-    coding: [],
-    auditing: [],
+    plan: [],
+    code: [],
+    audit: [],
     completed: [],
   });
   const [loading, setLoading] = useState(true);
@@ -222,10 +223,11 @@ const App: React.FC = () => {
       ) : (
         <Board
           data={{
+            chat: getFilteredItems(boardData.chat),
             queue: getFilteredItems(boardData.queue),
-            planning: getFilteredItems(boardData.planning),
-            coding: getFilteredItems(boardData.coding),
-            auditing: getFilteredItems(boardData.auditing),
+            plan: getFilteredItems(boardData.plan),
+            code: getFilteredItems(boardData.code),
+            audit: getFilteredItems(boardData.audit),
             completed: getFilteredItems(boardData.completed),
           }}
           onMoveItem={(itemId, targetStage) => {

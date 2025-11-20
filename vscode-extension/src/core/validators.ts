@@ -7,7 +7,7 @@ import type { Stage, ItemType, Frontmatter } from './types';
 // Re-export FrontmatterSchema for convenience
 export { ParserFrontmatterSchema as FrontmatterSchema };
 
-const VALID_STAGES: Stage[] = ['chat', 'queue', 'plan', 'planning', 'code', 'coding', 'audit', 'auditing', 'completed'];
+const VALID_STAGES: Stage[] = ['chat', 'queue', 'plan', 'code', 'audit', 'completed'];
 const VALID_ITEM_TYPES: ItemType[] = ['phase', 'task'];
 
 /**
@@ -202,6 +202,8 @@ export const UpdateItemSchema = z.object({
   tags: z.array(z.string().max(50, 'Tag is too long')).max(20, 'Too many tags').optional(),
   dependencies: z.array(z.string().regex(/^[a-z0-9-]+$/, 'Invalid dependency ID format')).max(50, 'Too many dependencies').optional(),
   assignees: z.array(z.string().max(100, 'Assignee name is too long')).max(20, 'Too many assignees').optional(),
+  agent: z.string().max(100, 'Agent ID is too long').optional(),
+  contexts: z.array(z.string().max(100, 'Context ID is too long')).max(20, 'Too many contexts').optional(),
 }).strict(); // Prevent unexpected fields
 
 export type UpdateItemData = z.infer<typeof UpdateItemSchema>;

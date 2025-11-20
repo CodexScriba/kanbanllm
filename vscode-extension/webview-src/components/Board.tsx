@@ -21,10 +21,11 @@ interface BoardProps {
 }
 
 const COLUMNS: ColumnConfig[] = [
+  { id: 'chat', title: 'Chat', icon: '💬', color: '#a855f7' },
   { id: 'queue', title: 'Queue', icon: '📋', color: '#3b82f6' },
-  { id: 'planning', title: 'Planning', icon: '📝', color: '#eab308' },
-  { id: 'coding', title: 'Coding', icon: '💻', color: '#10b981' },
-  { id: 'auditing', title: 'Auditing', icon: '🔍', color: '#8b5cf6' },
+  { id: 'plan', title: 'Plan', icon: '📝', color: '#eab308' },
+  { id: 'code', title: 'Code', icon: '💻', color: '#10b981' },
+  { id: 'audit', title: 'Audit', icon: '🔍', color: '#8b5cf6' },
   { id: 'completed', title: 'Completed', icon: '✅', color: '#6b7280' },
 ];
 

@@ -15,6 +15,7 @@ const stageValues = [
   'code',
   'audit',
   'completed',
+  // Legacy aliases
   'planning',
   'coding',
   'auditing',
@@ -30,6 +31,7 @@ const stageNormalizationMap: Record<typeof stageValues[number], Stage> = {
   code: 'code',
   audit: 'audit',
   completed: 'completed',
+  // Legacy mappings
   planning: 'plan',
   coding: 'code',
   auditing: 'audit',
@@ -52,11 +54,20 @@ export const FrontmatterSchema = z.object({
   title: z.string().min(1),
   stage: z.enum(stageValues),
   phase: z.string().optional(),
-  created: z.string().datetime(),
-  updated: z.string().datetime(),
+  agent: z.string().optional(),
+  contexts: z.array(z.string()).optional(),
+  created: z.union([z.string(), z.date()]).transform(val => 
+    val instanceof Date ? val.toISOString() : val
+  ).pipe(z.string().datetime()),
+  updated: z.union([z.string(), z.date()]).transform(val => 
+    val instanceof Date ? val.toISOString() : val
+  ).pipe(z.string().datetime()),
   tags: z.array(z.string()).optional(),
   dependencies: z.array(z.string()).optional(),
   assignees: z.array(z.string()).optional(),
+  description: z.string().optional(),
+  model: z.string().optional(),
+  temperature: z.number().optional(),
 });
 
 /**
@@ -160,7 +171,10 @@ export function buildManagedSection(
   stage: string,
   stageContent: string,
   phaseTitle?: string,
-  phaseContent?: string
+  phaseContent?: string,
+  agentName?: string,
+  agentContent?: string,
+  contextItems?: { id: string; content: string }[]
 ): string {
   const parts: string[] = [];
 
@@ -179,6 +193,31 @@ export function buildManagedSection(
       parts.push(phaseContent.trim());
     } else {
       parts.push('_No phase context defined yet._');
+    }
+  }
+
+  // Agent section (if applicable)
+  if (agentName) {
+    parts.push('');
+    parts.push(`## 🤖 Agent: ${agentName}`);
+    parts.push('');
+    if (agentContent && agentContent.trim()) {
+      parts.push(agentContent.trim());
+    } else {
+      parts.push('_No agent instructions defined._');
+    }
+  }
+
+  // Additional Contexts (if applicable)
+  if (contextItems && contextItems.length > 0) {
+    parts.push('');
+    parts.push('## 📚 Contexts');
+    
+    for (const ctx of contextItems) {
+      parts.push('');
+      parts.push(`### ${ctx.id}`);
+      parts.push('');
+      parts.push(ctx.content.trim());
     }
   }
 

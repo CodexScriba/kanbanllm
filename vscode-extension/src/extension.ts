@@ -231,14 +231,11 @@ function getWorkspaceRoot(): string | undefined {
 function getStageFolderName(stage: Stage): string {
   const folderMap: Record<Stage, string> = {
     queue: '1-queue',
-    planning: '2-planning',
-    coding: '3-coding',
-    auditing: '4-auditing',
-    completed: '5-completed',
-    chat: 'chat',
     plan: '2-planning',
     code: '3-coding',
-    audit: '4-auditing'
+    audit: '4-auditing',
+    completed: '5-completed',
+    chat: 'chat'
   };
   return folderMap[stage];
 }
@@ -266,14 +263,11 @@ async function initializeWorkspace(workspaceRoot: string): Promise<void> {
   // Create default context files
   const stageContexts: Record<Stage, string> = {
     queue: '# Queue Stage\n\nItems waiting to be planned and executed.',
-    planning: '# Planning Stage\n\nItems being planned and designed.',
-    coding: '# Coding Stage\n\nItems being actively implemented.',
-    auditing: '# Auditing Stage\n\nItems under review and testing.',
-    completed: '# Completed Stage\n\nFinished items.',
-    chat: '# Chat Stage\n\nCapture prompts and ideas from LLM chats.',
     plan: '# Plan Stage\n\nTask refinement and specification.',
     code: '# Code Stage\n\nActive implementation.',
     audit: '# Audit Stage\n\nReview and validation.',
+    completed: '# Completed Stage\n\nFinished items.',
+    chat: '# Chat Stage\n\nCapture prompts and ideas from LLM chats.',
   };
 
   for (const [stage, content] of Object.entries(stageContexts)) {
@@ -319,9 +313,9 @@ async function createTaskWorkflow(workspaceRoot: string): Promise<void> {
   // Step 2: Select stage
   const stageOptions = [
     { label: 'Queue', value: 'queue' as Stage },
-    { label: 'Planning', value: 'planning' as Stage },
-    { label: 'Coding', value: 'coding' as Stage },
-    { label: 'Auditing', value: 'auditing' as Stage },
+    { label: 'Plan', value: 'plan' as Stage },
+    { label: 'Code', value: 'code' as Stage },
+    { label: 'Audit', value: 'audit' as Stage },
     { label: 'Completed', value: 'completed' as Stage },
   ];
 
@@ -383,9 +377,9 @@ async function createPhaseWorkflow(workspaceRoot: string): Promise<void> {
   // Step 2: Select stage
   const stageOptions = [
     { label: 'Queue', value: 'queue' as Stage },
-    { label: 'Planning', value: 'planning' as Stage },
-    { label: 'Coding', value: 'coding' as Stage },
-    { label: 'Auditing', value: 'auditing' as Stage },
+    { label: 'Plan', value: 'plan' as Stage },
+    { label: 'Code', value: 'code' as Stage },
+    { label: 'Audit', value: 'audit' as Stage },
     { label: 'Completed', value: 'completed' as Stage },
   ];
 
@@ -458,9 +452,9 @@ async function moveTaskWorkflow(workspaceRoot: string, itemId?: string): Promise
   // Select target stage
   const stageOptions = [
     { label: 'Queue', value: 'queue' as Stage },
-    { label: 'Planning', value: 'planning' as Stage },
-    { label: 'Coding', value: 'coding' as Stage },
-    { label: 'Auditing', value: 'auditing' as Stage },
+    { label: 'Plan', value: 'plan' as Stage },
+    { label: 'Code', value: 'code' as Stage },
+    { label: 'Audit', value: 'audit' as Stage },
     { label: 'Completed', value: 'completed' as Stage },
   ].filter(option => option.value !== item.stage); // Exclude current stage
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+// import { describe, expect, it } from 'vitest';
 import {
   parseItem,
   serializeItem,
@@ -31,7 +31,7 @@ describe('Parser', () => {
       const markdown = `---
 id: test-task-123
 title: Test Task
-stage: coding
+stage: code
 type: task
 tags: [test, unit]
 created: "2025-01-01T00:00:00Z"
@@ -60,7 +60,7 @@ User content here.`;
       const markdown = `---
 id: test-task-123
 title: Test Task
-stage: coding
+stage: code
 type: task
 created: "2025-01-01T00:00:00Z"
 updated: "2025-01-02T00:00:00Z"
@@ -82,7 +82,7 @@ This is the coding stage.
       const markdown = `---
 id: test-task-123
 title: Test Task
-stage: coding
+stage: code
 type: task
 phase: phase1-test
 created: "2025-01-01T00:00:00Z"

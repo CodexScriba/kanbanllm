@@ -1,6 +1,6 @@
 // lib/types.ts
 
-export type Stage = 'chat' | 'queue' | 'plan' | 'planning' | 'code' | 'coding' | 'audit' | 'auditing' | 'completed';
+export type Stage = 'chat' | 'queue' | 'plan' | 'code' | 'audit' | 'completed';
 
 export type ItemType = 'phase' | 'task';
 
@@ -10,11 +10,16 @@ export interface Frontmatter {
   title: string;
   stage: Stage;
   phase?: string;          // For tasks: reference to phase ID
+  agent?: string;          // Agent ID assigned to this item
+  contexts?: string[];     // Array of additional context IDs (e.g. "global/architecture")
   created: string;         // ISO 8601
   updated: string;         // ISO 8601
   tags?: string[];
   dependencies?: string[]; // Array of item IDs
   assignees?: string[];
+  description?: string;    // For agents
+  model?: string;          // For agents
+  temperature?: number;    // For agents
 }
 
 export interface Item {
@@ -51,4 +56,6 @@ export interface CreateItemData {
   phase?: string;
   tags?: string[];
   initialContent?: string;
+  agent?: string;
+  contexts?: string[];
 }

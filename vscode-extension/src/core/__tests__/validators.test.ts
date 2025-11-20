@@ -13,7 +13,7 @@ describe('Validators', () => {
       const validFrontmatter = {
         id: 'test-id-123',
         title: 'Test Task',
-        stage: 'coding',
+        stage: 'code',
         type: 'task',
         tags: ['test', 'unit'],
         created: '2025-01-01T00:00:00Z',
@@ -26,7 +26,7 @@ describe('Validators', () => {
     it('should reject frontmatter with missing required fields', () => {
       const invalidFrontmatter = {
         title: 'Test Task',
-        stage: 'coding',
+        stage: 'code',
       };
 
       expect(() => validateFrontmatter(invalidFrontmatter)).toThrow();
@@ -49,7 +49,7 @@ describe('Validators', () => {
       const validFrontmatter = {
         id: 'test-id-123',
         title: 'Test Task',
-        stage: 'coding',
+        stage: 'code',
         type: 'task',
         phaseId: 'phase1-test',
         tags: [],
@@ -64,9 +64,9 @@ describe('Validators', () => {
   describe('validateStage', () => {
     it('should accept valid stages', () => {
       expect(validateStage('queue')).toBe(true);
-      expect(validateStage('planning')).toBe(true);
-      expect(validateStage('coding')).toBe(true);
-      expect(validateStage('auditing')).toBe(true);
+      expect(validateStage('plan')).toBe(true);
+      expect(validateStage('code')).toBe(true);
+      expect(validateStage('audit')).toBe(true);
       expect(validateStage('completed')).toBe(true);
     });
 
@@ -128,7 +128,7 @@ describe('Validators', () => {
       const data = {
         id: 'test-id',
         title: 'Test',
-        stage: 'coding',
+        stage: 'code',
         type: 'task',
         tags: ['test'],
         created: '2025-01-01T00:00:00Z',
@@ -143,7 +143,7 @@ describe('Validators', () => {
       const data = {
         id: 'test-id',
         title: 'Test',
-        stage: 'coding',
+        stage: 'code',
         type: 'task',
         created: '2025-01-01T00:00:00Z',
         updated: '2025-01-02T00:00:00Z',

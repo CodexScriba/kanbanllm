@@ -1,5 +1,5 @@
 // Types for the webview UI (mirror of core types)
-export type Stage = 'queue' | 'planning' | 'coding' | 'auditing' | 'completed';
+export type Stage = 'chat' | 'queue' | 'plan' | 'code' | 'audit' | 'completed';
 export type ItemType = 'phase' | 'task';
 
 export interface Item {
@@ -15,10 +15,11 @@ export interface Item {
 }
 
 export interface BoardData {
+  chat: Item[];
   queue: Item[];
-  planning: Item[];
-  coding: Item[];
-  auditing: Item[];
+  plan: Item[];
+  code: Item[];
+  audit: Item[];
   completed: Item[];
 }
 

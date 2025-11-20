@@ -2,6 +2,13 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import type { Stage, Item } from './types';
+import {
+  USER_CONTENT_START,
+  parseItem,
+  serializeItem,
+  extractUserContent,
+  buildManagedSection,
+} from './parser';
 
 const KANBAN_FOLDER_NAME = '.llmkanban';
 let workspaceRoot: string | null = null;
@@ -142,13 +149,18 @@ export function generateId(title: string, prefix?: string): string {
 /**
  * Reads a context file (stage or phase context)
  */
-export async function readContextFile(type: 'stage' | 'phase', id: string): Promise<string> {
+export async function readContextFile(type: 'stage' | 'phase' | 'agent' | 'context', id: string): Promise<string> {
   let contextPath: string;
 
   if (type === 'stage') {
     contextPath = path.join(getKanbanRootPath(), '_context', 'stages', `${id}.md`);
-  } else {
+  } else if (type === 'phase') {
     contextPath = path.join(getKanbanRootPath(), '_context', 'phases', `${id}.md`);
+  } else if (type === 'agent') {
+    contextPath = path.join(getKanbanRootPath(), '_context', 'agents', `${id}.md`);
+  } else {
+    // context
+    contextPath = path.join(getKanbanRootPath(), '_context', `${id}.md`);
   }
 
   const validatedPath = validatePath(contextPath);
@@ -168,13 +180,22 @@ export async function readContextFile(type: 'stage' | 'phase', id: string): Prom
  * Finds an item by ID across all stage folders
  */
 export async function findItemById(itemId: string): Promise<string | null> {
-  const stages: Stage[] = ['queue', 'planning', 'coding', 'auditing', 'completed'];
+  const stages: Stage[] = ['queue', 'plan', 'code', 'audit', 'completed'];
 
   for (const stage of stages) {
     const items = await listItemsInStage(stage);
     const found = items.find(itemPath => {
       const filename = path.basename(itemPath, '.md');
-      return filename === itemId;
+      // Exact match (legacy or ID-only)
+      if (filename === itemId) return true;
+      
+      // Check for stage prefix: {stage}.{id}
+      const parts = filename.split('.');
+      if (parts.length > 1 && parts[0] === stage) {
+        const idPart = parts.slice(1).join('.');
+        return idPart === itemId;
+      }
+      return false;
     });
 
     if (found) {
@@ -246,14 +267,19 @@ export function extractSlugFromId(id: string): string {
 }
 
 /**
+ * Generates a filename for an item based on its frontmatter
+ * Format: {stage}.{id}.md
+ */
+export function generateFilename(stage: Stage, id: string): string {
+  return `${stage}.${id}.md`;
+}
+
+/**
  * Load all items from all stages
  */
 export async function loadAllItems(): Promise<Item[]> {
-  const stages: Stage[] = ['queue', 'planning', 'coding', 'auditing', 'completed'];
+  const stages: Stage[] = ['queue', 'plan', 'code', 'audit', 'completed'];
   const allItems: Item[] = [];
-
-  // Import parseItem dynamically to avoid circular dependency
-  const { parseItem } = await import('./parser.js');
 
   for (const stage of stages) {
     const itemPaths = await listItemsInStage(stage);
@@ -322,7 +348,7 @@ function flattenItem(item: Item): FlatItem {
     created: item.frontmatter.created,
     updated: item.frontmatter.updated,
     userContent: item.body,
-    managedSection: item.fullContent.split('<!-- DOCFLOW:USER-CONTENT')[0],
+    managedSection: item.fullContent.split(USER_CONTENT_START)[0],
   };
 }
 
@@ -333,20 +359,29 @@ function flattenItem(item: Item): FlatItem {
  * @returns Flattened item or null if not found
  */
 export async function readItemById(workspaceRoot: string, itemId: string): Promise<FlatItem | null> {
-  const { parseItem } = await import('./parser.js');
+  const stages: Stage[] = ['queue', 'plan', 'code', 'audit', 'completed', 'chat'];
+  // Map stages to possible folders (canonical + legacy)
+  // We check canonical first, then legacy
+  const stageFolderMap: Record<Stage, string[]> = {
+    queue: ['queue', '1-queue'],
+    plan: ['plan', 'planning', '2-planning'],
+    code: ['code', 'coding', '3-coding'],
+    audit: ['audit', 'auditing', '4-auditing'],
+    completed: ['completed', '5-completed'],
+    chat: ['chat']
+  };
 
-  const stages: Stage[] = ['queue', 'planning', 'coding', 'auditing', 'completed', 'chat', 'plan', 'code', 'audit'];
-  const stageFolders = ['1-queue', '2-planning', '3-coding', '4-auditing', '5-completed', 'chat', '2-planning', '3-coding', '4-auditing'];
-
-  for (let i = 0; i < stages.length; i++) {
-    const filePath = path.join(workspaceRoot, '.llmkanban', stageFolders[i], `${itemId}.md`);
-    try {
-      const content = await fs.readFile(filePath, 'utf-8');
-      const item = parseItem(content, filePath);
-      return flattenItem(item);
-    } catch {
-      // File not found in this stage, continue
-      continue;
+  for (const stage of stages) {
+    const folders = stageFolderMap[stage];
+    for (const folder of folders) {
+      const filePath = path.join(workspaceRoot, '.llmkanban', folder, `${itemId}.md`);
+      try {
+        const content = await fs.readFile(filePath, 'utf-8');
+        const item = parseItem(content, filePath);
+        return flattenItem(item);
+      } catch {
+        continue;
+      }
     }
   }
 
@@ -359,8 +394,6 @@ export async function readItemById(workspaceRoot: string, itemId: string): Promi
  * @returns Board data with items organized by stage
  */
 export async function loadBoardData(workspaceRoot: string): Promise<BoardDataFlat> {
-  const { parseItem } = await import('./parser.js');
-
   const boardData: BoardDataFlat = {
     queue: [],
     planning: [],
@@ -373,33 +406,40 @@ export async function loadBoardData(workspaceRoot: string): Promise<BoardDataFla
     audit: [],
   };
 
-  const stages: Stage[] = ['queue', 'planning', 'coding', 'auditing', 'completed', 'chat', 'plan', 'code', 'audit'];
-  const stageFolders = ['1-queue', '2-planning', '3-coding', '4-auditing', '5-completed', 'chat', '2-planning', '3-coding', '4-auditing'];
+  const stages: Stage[] = ['queue', 'plan', 'code', 'audit', 'completed', 'chat'];
+  
+  // Map stages to possible folders (canonical + legacy)
+  const stageFolderMap: Record<Stage, string[]> = {
+    queue: ['queue', '1-queue'],
+    plan: ['plan', 'planning', '2-planning'],
+    code: ['code', 'coding', '3-coding'],
+    audit: ['audit', 'auditing', '4-auditing'],
+    completed: ['completed', '5-completed'],
+    chat: ['chat']
+  };
 
-  for (let i = 0; i < stages.length; i++) {
-    const stage = stages[i];
-    const stageFolder = stageFolders[i];
-    const stagePath = path.join(workspaceRoot, '.llmkanban', stageFolder);
+  for (const stage of stages) {
+    const folders = stageFolderMap[stage];
+    for (const folder of folders) {
+      const stagePath = path.join(workspaceRoot, '.llmkanban', folder);
+      try {
+        const files = await fs.readdir(stagePath);
+        const mdFiles = files.filter(f => f.endsWith('.md'));
 
-    try {
-      const files = await fs.readdir(stagePath);
-      const mdFiles = files.filter(f => f.endsWith('.md'));
-
-      for (const file of mdFiles) {
-        const filePath = path.join(stagePath, file);
-        try {
-          const content = await fs.readFile(filePath, 'utf-8');
-          const item = parseItem(content, filePath);
-          const flatItem = flattenItem(item);
-          boardData[stage].push(flatItem);
-        } catch {
-          // Skip invalid files
-          continue;
+        for (const file of mdFiles) {
+          const filePath = path.join(stagePath, file);
+          try {
+            const content = await fs.readFile(filePath, 'utf-8');
+            const item = parseItem(content, filePath);
+            const flatItem = flattenItem(item);
+            boardData[stage].push(flatItem);
+          } catch {
+            continue;
+          }
         }
+      } catch {
+        continue;
       }
-    } catch {
-      // Stage folder doesn't exist, continue
-      continue;
     }
   }
 
@@ -413,24 +453,35 @@ export async function loadBoardData(workspaceRoot: string): Promise<BoardDataFla
  * @param targetStage - Target stage
  */
 export async function moveItemToStage(workspaceRoot: string, itemId: string, targetStage: Stage): Promise<void> {
-  const { parseItem, serializeItem, extractUserContent, buildManagedSection } = await import('./parser.js');
-
+  const { reinjectContextForStageChange } = await import('./context-injector.js');
   // Find the item in current location
-  const stages: Stage[] = ['queue', 'planning', 'coding', 'auditing', 'completed', 'chat', 'plan', 'code', 'audit'];
-  const stageFolders = ['1-queue', '2-planning', '3-coding', '4-auditing', '5-completed', 'chat', '2-planning', '3-coding', '4-auditing'];
+  // Find item in any valid folder
+  const stages: Stage[] = ['queue', 'plan', 'code', 'audit', 'completed', 'chat'];
+  const stageFolderMap: Record<Stage, string[]> = {
+    queue: ['queue', '1-queue'],
+    plan: ['plan', 'planning', '2-planning'],
+    code: ['code', 'coding', '3-coding'],
+    audit: ['audit', 'auditing', '4-auditing'],
+    completed: ['completed', '5-completed'],
+    chat: ['chat']
+  };
 
   let currentPath: string | null = null;
   let currentContent: string | null = null;
 
-  for (let i = 0; i < stages.length; i++) {
-    const filePath = path.join(workspaceRoot, '.llmkanban', stageFolders[i], `${itemId}.md`);
-    try {
-      const content = await fs.readFile(filePath, 'utf-8');
-      currentPath = filePath;
-      currentContent = content;
-      break;
-    } catch {
-      continue;
+  outerLoop:
+  for (const stage of stages) {
+    const folders = stageFolderMap[stage];
+    for (const folder of folders) {
+      const filePath = path.join(workspaceRoot, '.llmkanban', folder, `${itemId}.md`);
+      try {
+        const content = await fs.readFile(filePath, 'utf-8');
+        currentPath = filePath;
+        currentContent = content;
+        break outerLoop;
+      } catch {
+        continue;
+      }
     }
   }
 
@@ -438,41 +489,18 @@ export async function moveItemToStage(workspaceRoot: string, itemId: string, tar
     throw new Error(`Item ${itemId} not found`);
   }
 
-  // Parse the item
-  const item = parseItem(currentContent, currentPath);
-  const userContent = extractUserContent(currentContent);
-
-  // Update frontmatter with new stage
-  const updatedFrontmatter = {
-    ...item.frontmatter,
-    stage: targetStage,
-    updated: new Date().toISOString(),
-  };
-
-  // Build new managed section with updated stage context
-  const stageContent = await readContextFile('stage', targetStage);
-  let phaseContent = '';
-  let phaseTitle = '';
-
-  if (item.frontmatter.phase) {
-    phaseContent = await readContextFile('phase', item.frontmatter.phase);
-    phaseTitle = item.frontmatter.phase; // Use phase ID as fallback title
-  }
-
-  const managedSection = buildManagedSection(
-    targetStage,
-    stageContent,
-    phaseTitle,
-    phaseContent
+  // Re-inject context for new stage
+  const newContent = await reinjectContextForStageChange(
+    currentContent,
+    currentPath,
+    targetStage
   );
 
-  // Serialize to markdown
-  const newContent = serializeItem(updatedFrontmatter, managedSection, userContent);
-
   // Determine target path
-  const targetFolderIndex = stages.indexOf(targetStage);
-  const targetFolder = stageFolders[targetFolderIndex];
-  const targetPath = path.join(workspaceRoot, '.llmkanban', targetFolder, `${itemId}.md`);
+  // Determine target path (always use canonical folder)
+  const targetFolder = targetStage;
+  const newFilename = generateFilename(targetStage, itemId);
+  const targetPath = path.join(workspaceRoot, '.llmkanban', targetFolder, newFilename);
 
   // Write to new location
   const targetDir = path.dirname(targetPath);
@@ -491,17 +519,26 @@ export async function moveItemToStage(workspaceRoot: string, itemId: string, tar
  * @param itemId - Item ID
  */
 export async function deleteItemById(workspaceRoot: string, itemId: string): Promise<void> {
-  const stages: Stage[] = ['queue', 'planning', 'coding', 'auditing', 'completed', 'chat', 'plan', 'code', 'audit'];
-  const stageFolders = ['1-queue', '2-planning', '3-coding', '4-auditing', '5-completed', 'chat', '2-planning', '3-coding', '4-auditing'];
+  const stages: Stage[] = ['queue', 'plan', 'code', 'audit', 'completed', 'chat'];
+  const stageFolderMap: Record<Stage, string[]> = {
+    queue: ['queue', '1-queue'],
+    plan: ['plan', 'planning', '2-planning'],
+    code: ['code', 'coding', '3-coding'],
+    audit: ['audit', 'auditing', '4-auditing'],
+    completed: ['completed', '5-completed'],
+    chat: ['chat']
+  };
 
-  for (let i = 0; i < stages.length; i++) {
-    const filePath = path.join(workspaceRoot, '.llmkanban', stageFolders[i], `${itemId}.md`);
-    try {
-      await fs.unlink(filePath);
-      return; // Successfully deleted
-    } catch {
-      // File not in this stage, continue
-      continue;
+  for (const stage of stages) {
+    const folders = stageFolderMap[stage];
+    for (const folder of folders) {
+      const filePath = path.join(workspaceRoot, '.llmkanban', folder, `${itemId}.md`);
+      try {
+        await fs.unlink(filePath);
+        return; // Successfully deleted
+      } catch {
+        continue;
+      }
     }
   }
 
@@ -523,13 +560,15 @@ export async function createItem(
     phaseId?: string;
     tags?: string[];
     initialContent?: string;
+    agent?: string;
+    contexts?: string[];
   }
 ): Promise<FlatItem> {
-  const { buildManagedSection, serializeItem } = await import('./parser.js');
-
+  const { createItemWithContext } = await import('./context-injector.js');
   // Generate ID
   const id = generateId(data.title);
 
+  // Create frontmatter
   // Create frontmatter
   const frontmatter = {
     id,
@@ -537,6 +576,8 @@ export async function createItem(
     title: data.title,
     stage: data.stage,
     phase: data.phaseId,
+    agent: data.agent,
+    contexts: data.contexts,
     created: new Date().toISOString(),
     updated: new Date().toISOString(),
     tags: data.tags || [],
@@ -544,40 +585,14 @@ export async function createItem(
     assignees: [],
   };
 
-  // Read stage context
-  const stageContent = await readContextFile('stage', data.stage);
-  let phaseContent = '';
-  let phaseTitle = '';
-
-  if (data.phaseId) {
-    phaseContent = await readContextFile('phase', data.phaseId);
-    phaseTitle = data.phaseId;
-  }
-
-  const managedSection = buildManagedSection(
-    data.stage,
-    stageContent,
-    phaseTitle,
-    phaseContent
-  );
-
-  // Serialize to markdown
-  const content = serializeItem(frontmatter, managedSection, data.initialContent || '');
+  // Create content with context
+  const content = await createItemWithContext(frontmatter, data.initialContent || '');
 
   // Determine file path
-  const stageFolders: Record<Stage, string> = { 
-    queue: '1-queue', 
-    planning: '2-planning', 
-    coding: '3-coding', 
-    auditing: '4-auditing', 
-    completed: '5-completed',
-    chat: 'chat',
-    plan: '2-planning',
-    code: '3-coding',
-    audit: '4-auditing'
-  };
-  const stageFolder = stageFolders[data.stage];
-  const filePath = path.join(workspaceRoot, '.llmkanban', stageFolder, `${id}.md`);
+  // Determine file path (always use canonical folder)
+  const stageFolder = data.stage;
+  const filename = generateFilename(data.stage, id);
+  const filePath = path.join(workspaceRoot, '.llmkanban', stageFolder, filename);
 
   // Write file
   const dir = path.dirname(filePath);
@@ -595,6 +610,32 @@ export async function createItem(
     created: frontmatter.created,
     updated: frontmatter.updated,
     userContent: data.initialContent || '',
-    managedSection,
+    managedSection: content.split(USER_CONTENT_START)[0],
   };
+}
+
+/**
+ * Migrates all items in the workspace to the canonical filename format
+ */
+export async function migrateToCanonicalFilenames(workspaceRoot: string): Promise<void> {
+  const items = await loadAllItems(); // This loads from all stages
+
+  for (const item of items) {
+    const oldPath = item.filePath;
+    const stage = item.frontmatter.stage;
+    const id = item.frontmatter.id;
+    
+    const newFilename = generateFilename(stage, id);
+    const newPath = path.join(workspaceRoot, '.llmkanban', stage, newFilename);
+
+    // If path is different, move it
+    if (oldPath !== newPath) {
+      // Ensure target directory exists
+      const targetDir = path.dirname(newPath);
+      await fs.mkdir(targetDir, { recursive: true });
+      
+      // Move file
+      await fs.rename(oldPath, newPath);
+    }
+  }
 }

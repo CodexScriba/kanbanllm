@@ -57,14 +57,11 @@ export class KanbanTreeItem extends vscode.TreeItem {
   private getStageIcon(stage: Stage): vscode.ThemeIcon {
     const iconMap: Record<Stage, string> = {
       queue: 'inbox',
-      planning: 'edit',
-      coding: 'code',
-      auditing: 'search',
+      plan: 'edit',
+      code: 'code',
+      audit: 'search',
       completed: 'check-all',
-      chat: 'comment-discussion',
-      plan: 'list-unordered',
-      code: 'file-code',
-      audit: 'eye'
+      chat: 'comment-discussion'
     };
     return new vscode.ThemeIcon(iconMap[stage]);
   }
@@ -172,17 +169,14 @@ export class SidebarProvider implements vscode.TreeDataProvider<KanbanTreeItem> 
    * Build hierarchical tree of stages → phases → tasks
    */
   private async buildStageTree(boardData: any): Promise<KanbanTreeItem[]> {
-    const stages: Stage[] = ['queue', 'planning', 'coding', 'auditing', 'completed'];
+    const stages: Stage[] = ['queue', 'plan', 'code', 'audit', 'completed'];
     const stageLabels: Record<Stage, string> = {
       queue: 'Queue',
-      planning: 'Planning',
-      coding: 'Coding',
-      auditing: 'Auditing',
-      completed: 'Completed',
-      chat: 'Chat',
       plan: 'Plan',
       code: 'Code',
-      audit: 'Audit'
+      audit: 'Audit',
+      completed: 'Completed',
+      chat: 'Chat'
     };
 
     return stages.map(stage => {

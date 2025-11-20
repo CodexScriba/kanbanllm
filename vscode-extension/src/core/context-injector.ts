@@ -3,6 +3,25 @@ import { readContextFile, findItemById, readItem } from './fs-adapter';
 import { parseItem, buildManagedSection, serializeItem, extractUserContent } from './parser';
 import type { Item, Stage, Frontmatter } from './types';
 
+async function resolveAgentAndContexts(frontmatter: Frontmatter): Promise<{ agentContent?: string; contextItems: { id: string; content: string }[] }> {
+  const contextItems: { id: string; content: string }[] = [];
+  const agentContent = frontmatter.agent
+    ? await readContextFile('agent', frontmatter.agent)
+    : undefined;
+
+  if (frontmatter.contexts && frontmatter.contexts.length > 0) {
+    for (const ctxId of frontmatter.contexts) {
+      const ctxContent = await readContextFile('context', ctxId);
+      contextItems.push({
+        id: ctxId,
+        content: ctxContent.trim() || '_No context content defined yet._',
+      });
+    }
+  }
+
+  return { agentContent, contextItems };
+}
+
 /**
  * Injects stage and phase context into an item
  * Preserves user content below the separator
@@ -41,11 +60,16 @@ export async function injectContext(
   }
 
   // Build managed section
+  const { agentContent, contextItems } = await resolveAgentAndContexts(item.frontmatter);
+
   const managedContent = buildManagedSection(
     newStage,
     stageContent,
     phaseTitle,
-    phaseContent
+    phaseContent,
+    item.frontmatter.agent,
+    agentContent,
+    contextItems
   );
 
   // Serialize with user content preserved
@@ -88,11 +112,16 @@ export async function createItemWithContext(
   }
 
   // Build managed section
+  const { agentContent, contextItems } = await resolveAgentAndContexts(frontmatter);
+
   const managedContent = buildManagedSection(
     frontmatter.stage,
     stageContent,
     phaseTitle,
-    phaseContent
+    phaseContent,
+    frontmatter.agent,
+    agentContent,
+    contextItems
   );
 
   // Serialize
@@ -178,11 +207,16 @@ export async function updateFrontmatterOnly(
   }
 
   // Build managed section
+  const { agentContent, contextItems } = await resolveAgentAndContexts(updatedFrontmatter);
+
   const managedContent = buildManagedSection(
     updatedFrontmatter.stage,
     stageContent,
     phaseTitle,
-    phaseContent
+    phaseContent,
+    updatedFrontmatter.agent,
+    agentContent,
+    contextItems
   );
 
   // Serialize

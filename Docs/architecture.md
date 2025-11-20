@@ -106,3 +106,8 @@ graph TD
     
     App --> Board
 ```
+
+## Build & Sync Notes (for future agents)
+- Always rebuild the extension before testing UI changes: `cd vscode-extension && bun run compile`.
+- The compiler outputs to `vscode-extension/out/src/*` while VS Code loads from `vscode-extension/out/*`. After compiling, copy the fresh artifacts into place (e.g., `cp -a out/src/. out/`) so the webview uses the latest `KanbanPanel` instead of the old placeholder.
+- If the board shows the “coming soon” placeholder, it means the compiled `out/webview/KanbanPanel.js` is stale—rerun the compile + copy sync above to fix it.

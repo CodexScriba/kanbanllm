@@ -143,7 +143,7 @@ export class KanbanPanel {
       console.error('Error loading board data:', error);
       this._panel.webview.postMessage({
         type: 'init',
-        data: { queue: [], planning: [], coding: [], auditing: [], completed: [] },
+        data: { chat: [], queue: [], plan: [], code: [], audit: [], completed: [] },
       });
     }
   }
@@ -163,9 +163,9 @@ export class KanbanPanel {
 
       // Find the file path
       const stageFolderName = item.stage === 'queue' ? '1-queue' :
-                              item.stage === 'planning' ? '2-planning' :
-                              item.stage === 'coding' ? '3-coding' :
-                              item.stage === 'auditing' ? '4-auditing' : '5-completed';
+                              item.stage === 'plan' ? '2-planning' :
+                              item.stage === 'code' ? '3-coding' :
+                              item.stage === 'audit' ? '4-auditing' : '5-completed';
 
       const filePath = path.join(
         this._workspaceRoot,

@@ -14,9 +14,6 @@ const STAGE_DESCRIPTIONS: Record<Stage, string> = {
   code: 'Active implementation by AI coding assistants or the developer.',
   audit: 'Review, QA, and validation work before marking items as complete.',
   completed: 'A permanent record of tasks that have shipped.',
-  planning: 'Task refinement and specification work before code is written.',
-  coding: 'Active implementation by AI coding assistants or the developer.',
-  auditing: 'Review, QA, and validation work before marking items as complete.',
 };
 
 async function pathExists(targetPath: string): Promise<boolean> {
