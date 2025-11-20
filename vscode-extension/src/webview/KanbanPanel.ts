@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { loadBoardData, moveItemToStage, deleteItemById, readItemById } from '../../../src/core/fs-adapter';
-import { serializeItemToMarkdown } from '../../../src/core/parser';
+import { loadBoardData, moveItemToStage, deleteItemById, readItemById } from '../core/fs-adapter';
+import { serializeItemToMarkdown } from '../core/parser';
 
 /**
  * Manages the Kanban Board webview panel with full backend integration

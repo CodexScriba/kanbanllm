@@ -1,4 +1,3 @@
-```typescript
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs/promises';
@@ -235,7 +234,11 @@ function getStageFolderName(stage: Stage): string {
     planning: '2-planning',
     coding: '3-coding',
     auditing: '4-auditing',
-    completed: '5-completed'
+    completed: '5-completed',
+    chat: 'chat',
+    plan: '2-planning',
+    code: '3-coding',
+    audit: '4-auditing'
   };
   return folderMap[stage];
 }
@@ -267,6 +270,10 @@ async function initializeWorkspace(workspaceRoot: string): Promise<void> {
     coding: '# Coding Stage\n\nItems being actively implemented.',
     auditing: '# Auditing Stage\n\nItems under review and testing.',
     completed: '# Completed Stage\n\nFinished items.',
+    chat: '# Chat Stage\n\nCapture prompts and ideas from LLM chats.',
+    plan: '# Plan Stage\n\nTask refinement and specification.',
+    code: '# Code Stage\n\nActive implementation.',
+    audit: '# Audit Stage\n\nReview and validation.',
   };
 
   for (const [stage, content] of Object.entries(stageContexts)) {
