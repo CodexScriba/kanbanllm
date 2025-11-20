@@ -1,6 +1,6 @@
 // lib/types.ts
 
-export type Stage = 'chat' | 'queue' | 'plan' | 'code' | 'audit' | 'completed';
+export type Stage = 'chat' | 'queue' | 'plan' | 'planning' | 'code' | 'coding' | 'audit' | 'auditing' | 'completed';
 
 export type ItemType = 'phase' | 'task';
 

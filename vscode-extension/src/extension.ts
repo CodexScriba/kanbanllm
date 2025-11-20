@@ -1,4 +1,7 @@
+```typescript
 import * as vscode from 'vscode';
+import * as path from 'path';
+import * as fs from 'fs/promises';
 import { SidebarProvider } from './sidebar/SidebarProvider';
 import { KanbanPanel } from './webview/KanbanPanel';
 import {
@@ -6,12 +9,11 @@ import {
   ensureKanbanWorkspace,
   isKanbanWorkspaceInitialized,
 } from './workspace/KanbanWorkspace';
+import { moveItemToStage, deleteItemById, readItemById, loadBoardData, createItem, type FlatItem } from './core/fs-adapter';
+import { Stage } from './core/types';
 
 /**
- * Extension activation entry point
- *
- * Task 0: Register sidebar tree view and placeholder commands ✅
- * Task 1: Setup webview infrastructure ✅
+ * Extension activation entry point - Complete implementation
  */
 export function activate(context: vscode.ExtensionContext) {
   console.log('LLM Kanban extension is now active');
@@ -26,9 +28,25 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.registerTreeDataProvider('llmKanban.treeView', sidebarProvider)
   );
 
-  // Register command: Open Kanban Board
-  // Task 1: Opens webview with placeholder content
-  // Task 2: Will display full board layout
+  // File watcher for auto-refresh
+  let fileWatcher: vscode.FileSystemWatcher | undefined;
+  const workspaceRoot = getWorkspaceRoot();
+  if (workspaceRoot) {
+    const llmkanbanPath = path.join(workspaceRoot, '.llmkanban');
+    fileWatcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(llmkanbanPath, '**/*.md')
+    );
+
+    fileWatcher.onDidChange(() => sidebarProvider.refresh());
+    fileWatcher.onDidCreate(() => sidebarProvider.refresh());
+    fileWatcher.onDidDelete(() => sidebarProvider.refresh());
+
+    context.subscriptions.push(fileWatcher);
+  }
+
+  // ========== COMMANDS ==========
+
+  // Open Kanban Board
   context.subscriptions.push(
     vscode.commands.registerCommand('llmKanban.openBoard', async () => {
       try {
@@ -47,18 +65,7 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  // Register command: Open Settings
-  // Task 0: Shows placeholder notification
-  // Future: Will open settings UI
-  context.subscriptions.push(
-    vscode.commands.registerCommand('llmKanban.openSettings', () => {
-      vscode.window.showInformationMessage('Settings - Coming soon!');
-      // Future implementation:
-      // Open VSCode settings or custom settings panel
-    })
-  );
-
-  // Register workspace initialization command
+  // Initialize Workspace (using main's implementation)
   context.subscriptions.push(
     vscode.commands.registerCommand('llmKanban.initializeWorkspace', async () => {
       try {
@@ -76,7 +83,120 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  // Register command: Refresh sidebar
+  // Create Task
+  context.subscriptions.push(
+    vscode.commands.registerCommand('llmKanban.createTask', async () => {
+      const workspaceRoot = getWorkspaceRoot();
+      if (!workspaceRoot) {
+        vscode.window.showErrorMessage('No workspace folder open');
+        return;
+      }
+
+      try {
+        await createTaskWorkflow(workspaceRoot);
+        sidebarProvider.refresh();
+      } catch (error) {
+        vscode.window.showErrorMessage(`Error creating task: ${error}`);
+      }
+    })
+  );
+
+  // Create Phase
+  context.subscriptions.push(
+    vscode.commands.registerCommand('llmKanban.createPhase', async () => {
+      const workspaceRoot = getWorkspaceRoot();
+      if (!workspaceRoot) {
+        vscode.window.showErrorMessage('No workspace folder open');
+        return;
+      }
+
+      try {
+        await createPhaseWorkflow(workspaceRoot);
+        sidebarProvider.refresh();
+      } catch (error) {
+        vscode.window.showErrorMessage(`Error creating phase: ${error}`);
+      }
+    })
+  );
+
+  // Move Task
+  context.subscriptions.push(
+    vscode.commands.registerCommand('llmKanban.moveTask', async (itemId?: string) => {
+      const workspaceRoot = getWorkspaceRoot();
+      if (!workspaceRoot) {
+        vscode.window.showErrorMessage('No workspace folder open');
+        return;
+      }
+
+      try {
+        await moveTaskWorkflow(workspaceRoot, itemId);
+        sidebarProvider.refresh();
+      } catch (error) {
+        vscode.window.showErrorMessage(`Error moving task: ${error}`);
+      }
+    })
+  );
+
+  // Copy with Context
+  context.subscriptions.push(
+    vscode.commands.registerCommand('llmKanban.copyWithContext', async (itemId?: string) => {
+      const workspaceRoot = getWorkspaceRoot();
+      if (!workspaceRoot) {
+        vscode.window.showErrorMessage('No workspace folder open');
+        return;
+      }
+
+      try {
+        await copyWithContextWorkflow(workspaceRoot, itemId);
+      } catch (error) {
+        vscode.window.showErrorMessage(`Error copying: ${error}`);
+      }
+    })
+  );
+
+  // Delete Item
+  context.subscriptions.push(
+    vscode.commands.registerCommand('llmKanban.deleteItem', async (itemId?: string) => {
+      const workspaceRoot = getWorkspaceRoot();
+      if (!workspaceRoot) {
+        vscode.window.showErrorMessage('No workspace folder open');
+        return;
+      }
+
+      try {
+        await deleteItemWorkflow(workspaceRoot, itemId);
+        sidebarProvider.refresh();
+      } catch (error) {
+        vscode.window.showErrorMessage(`Error deleting item: ${error}`);
+      }
+    })
+  );
+
+  // Open Item from Sidebar
+  context.subscriptions.push(
+    vscode.commands.registerCommand('llmKanban.openItemFromSidebar', async (itemId: string) => {
+      const workspaceRoot = getWorkspaceRoot();
+      if (!workspaceRoot) return;
+
+      try {
+        const item = await readItemById(workspaceRoot, itemId);
+        if (!item) {
+          vscode.window.showErrorMessage(`Item ${itemId} not found`);
+          return;
+        }
+
+        const stageFolderName = getStageFolderName(item.stage);
+        const filePath = path.join(workspaceRoot, '.llmkanban', stageFolderName, `${item.id}.md`);
+
+        const doc = await vscode.workspace.openTextDocument(filePath);
+        await vscode.window.showTextDocument(doc);
+      } catch (error) {
+        vscode.window.showErrorMessage(`Error opening item: ${error}`);
+      }
+    })
+  );
+
+  // Refresh Sidebar
   context.subscriptions.push(
     vscode.commands.registerCommand('llmKanban.refreshSidebar', async () => {
       const initialized = await isKanbanWorkspaceInitialized();
@@ -90,6 +210,376 @@ export function activate(context: vscode.ExtensionContext) {
       }
     })
   );
+
+  // Settings (placeholder)
+  context.subscriptions.push(
+    vscode.commands.registerCommand('llmKanban.openSettings', () => {
+      vscode.window.showInformationMessage('Settings - Coming soon!');
+    })
+  );
+}
+
+// ========== HELPER FUNCTIONS ==========
+
+function getWorkspaceRoot(): string | undefined {
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  if (workspaceFolders && workspaceFolders.length > 0) {
+    return workspaceFolders[0].uri.fsPath;
+  }
+  return undefined;
+}
+
+function getStageFolderName(stage: Stage): string {
+  const folderMap: Record<Stage, string> = {
+    queue: '1-queue',
+    planning: '2-planning',
+    coding: '3-coding',
+    auditing: '4-auditing',
+    completed: '5-completed'
+  };
+  return folderMap[stage];
+}
+
+async function initializeWorkspace(workspaceRoot: string): Promise<void> {
+  const llmkanbanPath = path.join(workspaceRoot, '.llmkanban');
+
+  // Create folder structure
+  const folders = [
+    llmkanbanPath,
+    path.join(llmkanbanPath, '1-queue'),
+    path.join(llmkanbanPath, '2-planning'),
+    path.join(llmkanbanPath, '3-coding'),
+    path.join(llmkanbanPath, '4-auditing'),
+    path.join(llmkanbanPath, '5-completed'),
+    path.join(llmkanbanPath, '_context'),
+    path.join(llmkanbanPath, '_context', 'stages'),
+    path.join(llmkanbanPath, '_context', 'phases'),
+  ];
+
+  for (const folder of folders) {
+    await fs.mkdir(folder, { recursive: true });
+  }
+
+  // Create default context files
+  const stageContexts: Record<Stage, string> = {
+    queue: '# Queue Stage\n\nItems waiting to be planned and executed.',
+    planning: '# Planning Stage\n\nItems being planned and designed.',
+    coding: '# Coding Stage\n\nItems being actively implemented.',
+    auditing: '# Auditing Stage\n\nItems under review and testing.',
+    completed: '# Completed Stage\n\nFinished items.',
+  };
+
+  for (const [stage, content] of Object.entries(stageContexts)) {
+    const filePath = path.join(llmkanbanPath, '_context', 'stages', `${stage}.md`);
+    await fs.writeFile(filePath, content, 'utf-8');
+  }
+
+  // Create README
+  const readme = `# LLM Kanban Workspace
+
+This folder contains your LLM-assisted development task board.
+
+## Structure
+
+- \`1-queue/\` - Tasks waiting to be started
+- \`2-planning/\` - Tasks in planning phase
+- \`3-coding/\` - Tasks being implemented
+- \`4-auditing/\` - Tasks under review
+- \`5-completed/\` - Completed tasks
+- \`_context/\` - Context templates for stages and phases
+
+## Usage
+
+Use the LLM Kanban extension in VSCode to:
+- Create and manage tasks
+- Move tasks between stages
+- Copy tasks with context for LLM interactions
+`;
+
+  await fs.writeFile(path.join(llmkanbanPath, 'README.md'), readme, 'utf-8');
+}
+
+async function createTaskWorkflow(workspaceRoot: string): Promise<void> {
+  // Step 1: Get title
+  const title = await vscode.window.showInputBox({
+    prompt: 'Enter task title',
+    placeHolder: 'e.g., Implement user authentication',
+    validateInput: (value) => value.trim() ? null : 'Title cannot be empty'
+  });
+
+  if (!title) return;
+
+  // Step 2: Select stage
+  const stageOptions = [
+    { label: 'Queue', value: 'queue' as Stage },
+    { label: 'Planning', value: 'planning' as Stage },
+    { label: 'Coding', value: 'coding' as Stage },
+    { label: 'Auditing', value: 'auditing' as Stage },
+    { label: 'Completed', value: 'completed' as Stage },
+  ];
+
+  const stageChoice = await vscode.window.showQuickPick(stageOptions, {
+    placeHolder: 'Select target stage'
+  });
+
+  if (!stageChoice) return;
+
+  // Step 3: Select phase (optional)
+  const boardData = await loadBoardData(workspaceRoot);
+  const allPhases = Object.values(boardData)
+    .flat()
+    .filter(item => item.type === 'phase');
+
+  const phaseOptions = [
+    { label: '(No phase)', value: undefined },
+    ...allPhases.map(phase => ({ label: phase.title, value: phase.id }))
+  ];
+
+  const phaseChoice = await vscode.window.showQuickPick(phaseOptions, {
+    placeHolder: 'Select parent phase (optional)'
+  });
+
+  if (!phaseChoice) return;
+
+  // Step 4: Add tags (optional)
+  const tagsInput = await vscode.window.showInputBox({
+    prompt: 'Enter tags (comma-separated, optional)',
+    placeHolder: 'e.g., backend, api, authentication'
+  });
+
+  const tags = tagsInput
+    ? tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag)
+    : [];
+
+  // Create the task
+  await createItem(workspaceRoot, {
+    title: title.trim(),
+    stage: stageChoice.value,
+    type: 'task',
+    phaseId: phaseChoice.value,
+    tags,
+  });
+
+  vscode.window.showInformationMessage(`Task "${title}" created successfully!`);
+}
+
+async function createPhaseWorkflow(workspaceRoot: string): Promise<void> {
+  // Step 1: Get title
+  const title = await vscode.window.showInputBox({
+    prompt: 'Enter phase title',
+    placeHolder: 'e.g., User Authentication System',
+    validateInput: (value) => value.trim() ? null : 'Title cannot be empty'
+  });
+
+  if (!title) return;
+
+  // Step 2: Select stage
+  const stageOptions = [
+    { label: 'Queue', value: 'queue' as Stage },
+    { label: 'Planning', value: 'planning' as Stage },
+    { label: 'Coding', value: 'coding' as Stage },
+    { label: 'Auditing', value: 'auditing' as Stage },
+    { label: 'Completed', value: 'completed' as Stage },
+  ];
+
+  const stageChoice = await vscode.window.showQuickPick(stageOptions, {
+    placeHolder: 'Select target stage'
+  });
+
+  if (!stageChoice) return;
+
+  // Step 3: Add tags (optional)
+  const tagsInput = await vscode.window.showInputBox({
+    prompt: 'Enter tags (comma-separated, optional)',
+    placeHolder: 'e.g., feature, milestone'
+  });
+
+  const tags = tagsInput
+    ? tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag)
+    : [];
+
+  // Create the phase
+  const item = await createItem(workspaceRoot, {
+    title: title.trim(),
+    stage: stageChoice.value,
+    type: 'phase',
+    tags,
+  });
+
+  // Create phase context file
+  const phaseContextPath = path.join(
+    workspaceRoot,
+    '.llmkanban',
+    '_context',
+    'phases',
+    `${item.id}.md`
+  );
+
+  const phaseContextContent = `# ${title}\n\nPhase-specific context and information.\n`;
+  await fs.writeFile(phaseContextPath, phaseContextContent, 'utf-8');
+
+  vscode.window.showInformationMessage(`Phase "${title}" created successfully!`);
+}
+
+async function moveTaskWorkflow(workspaceRoot: string, itemId?: string): Promise<void> {
+  // If no itemId provided, ask user to select
+  if (!itemId) {
+    const boardData = await loadBoardData(workspaceRoot);
+    const allItems = Object.values(boardData).flat();
+
+    const itemOptions = allItems.map(item => ({
+      label: item.title,
+      description: `${item.type} in ${item.stage}`,
+      value: item.id
+    }));
+
+    const itemChoice = await vscode.window.showQuickPick(itemOptions, {
+      placeHolder: 'Select item to move'
+    });
+
+    if (!itemChoice) return;
+    itemId = itemChoice.value;
+  }
+
+  // Get current item
+  const item = await readItemById(workspaceRoot, itemId!);
+  if (!item) {
+    vscode.window.showErrorMessage('Item not found');
+    return;
+  }
+
+  // Select target stage
+  const stageOptions = [
+    { label: 'Queue', value: 'queue' as Stage },
+    { label: 'Planning', value: 'planning' as Stage },
+    { label: 'Coding', value: 'coding' as Stage },
+    { label: 'Auditing', value: 'auditing' as Stage },
+    { label: 'Completed', value: 'completed' as Stage },
+  ].filter(option => option.value !== item.stage); // Exclude current stage
+
+  const stageChoice = await vscode.window.showQuickPick(stageOptions, {
+    placeHolder: `Move "${item.title}" to...`
+  });
+
+  if (!stageChoice) return;
+
+  // Move the item
+  await moveItemToStage(workspaceRoot, itemId!, stageChoice.value);
+  vscode.window.showInformationMessage(`Moved "${item.title}" to ${stageChoice.label}`);
+}
+
+async function copyWithContextWorkflow(workspaceRoot: string, itemId?: string): Promise<void> {
+  // If no itemId provided, ask user to select
+  if (!itemId) {
+    const boardData = await loadBoardData(workspaceRoot);
+    const allItems = Object.values(boardData).flat();
+
+    const itemOptions = allItems.map(item => ({
+      label: item.title,
+      description: `${item.type} in ${item.stage}`,
+      value: item.id
+    }));
+
+    const itemChoice = await vscode.window.showQuickPick(itemOptions, {
+      placeHolder: 'Select item to copy'
+    });
+
+    if (!itemChoice) return;
+    itemId = itemChoice.value;
+  }
+
+  // Get item
+  const item = await readItemById(workspaceRoot, itemId!);
+  if (!item) {
+    vscode.window.showErrorMessage('Item not found');
+    return;
+  }
+
+  // Select copy mode
+  const modeOptions = [
+    {
+      label: 'Full',
+      description: 'Frontmatter + Managed + User content',
+      value: 'full'
+    },
+    {
+      label: 'Context + Content',
+      description: 'Managed section + User content only',
+      value: 'context'
+    },
+    {
+      label: 'User Content Only',
+      description: 'Pure user-written content',
+      value: 'user'
+    }
+  ];
+
+  const modeChoice = await vscode.window.showQuickPick(modeOptions, {
+    placeHolder: 'Select copy mode'
+  });
+
+  if (!modeChoice) return;
+
+  // Build text to copy
+  let textToCopy = '';
+  switch (modeChoice.value) {
+    case 'full':
+      // For full mode, reconstruct from managed section and user content
+      textToCopy = (item.managedSection || '') + '\n' + (item.userContent || '');
+      break;
+    case 'context':
+      textToCopy = (item.managedSection || '') + '\n\n' + (item.userContent || '');
+      break;
+    case 'user':
+      textToCopy = item.userContent || '';
+      break;
+  }
+
+  await vscode.env.clipboard.writeText(textToCopy);
+  vscode.window.showInformationMessage(
+    `Copied ${textToCopy.length} characters (${modeChoice.label} mode)`
+  );
+}
+
+async function deleteItemWorkflow(workspaceRoot: string, itemId?: string): Promise<void> {
+  // If no itemId provided, ask user to select
+  if (!itemId) {
+    const boardData = await loadBoardData(workspaceRoot);
+    const allItems = Object.values(boardData).flat();
+
+    const itemOptions = allItems.map(item => ({
+      label: item.title,
+      description: `${item.type} in ${item.stage}`,
+      value: item.id
+    }));
+
+    const itemChoice = await vscode.window.showQuickPick(itemOptions, {
+      placeHolder: 'Select item to delete'
+    });
+
+    if (!itemChoice) return;
+    itemId = itemChoice.value;
+  }
+
+  // Get item for confirmation
+  const item = await readItemById(workspaceRoot, itemId!);
+  if (!item) {
+    vscode.window.showErrorMessage('Item not found');
+    return;
+  }
+
+  // Confirm deletion
+  const confirm = await vscode.window.showWarningMessage(
+    `Delete "${item.title}"?`,
+    { modal: true },
+    'Delete'
+  );
+
+  if (confirm !== 'Delete') return;
+
+  // Delete the item
+  await deleteItemById(workspaceRoot, itemId!);
+  vscode.window.showInformationMessage(`Deleted "${item.title}"`);
 }
 
 /**
