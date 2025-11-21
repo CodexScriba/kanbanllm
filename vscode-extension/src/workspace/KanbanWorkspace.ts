@@ -70,8 +70,11 @@ export async function ensureKanbanWorkspace(): Promise<{
   // Context folders
   const stageContextDir = path.join(kanbanRoot, '_context', 'stages');
   const phaseContextDir = path.join(kanbanRoot, '_context', 'phases');
+  const agentContextDir = path.join(kanbanRoot, '_context', 'agents');
+  
   await fs.mkdir(stageContextDir, { recursive: true });
   await fs.mkdir(phaseContextDir, { recursive: true });
+  await fs.mkdir(agentContextDir, { recursive: true });
 
   // Ensure basic stage context files exist
   await Promise.all(

@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { loadBoardData, moveItemToStage, deleteItemById, readItemById } from '../core/fs-adapter';
+import { loadBoardData, moveItemToStage, deleteItemById, readItemById, createItem, updateItem, readContextFile, writeContextFile } from '../core/fs-adapter';
 import { serializeItemToMarkdown } from '../core/parser';
+import { AgentManager } from '../core/AgentManager';
+import { ContextManager } from '../core/ContextManager';
 
 /**
  * Manages the Kanban Board webview panel with full backend integration
@@ -14,6 +16,8 @@ export class KanbanPanel {
   private readonly _extensionUri: vscode.Uri;
   private _disposables: vscode.Disposable[] = [];
   private _workspaceRoot: string | undefined;
+  private _agentManager: AgentManager;
+  private _contextManager: ContextManager;
 
   /**
    * Create or show the Kanban board webview
@@ -59,6 +63,9 @@ export class KanbanPanel {
       this._workspaceRoot = workspaceFolders[0].uri.fsPath;
     }
 
+    this._agentManager = new AgentManager();
+    this._contextManager = new ContextManager();
+
     // Set initial HTML content
     this._update();
 
@@ -85,6 +92,12 @@ export class KanbanPanel {
     }
 
     try {
+      // Basic validation
+      if (!message || !message.type) {
+        console.warn('[Kanban Webview] Received invalid message:', message);
+        return;
+      }
+
       switch (message.type) {
         case 'ready':
           // Webview is ready, send initial data
@@ -92,16 +105,19 @@ export class KanbanPanel {
           break;
 
         case 'moveItem':
+          if (!message.itemId || !message.targetStage) throw new Error('Invalid moveItem payload');
           await moveItemToStage(this._workspaceRoot, message.itemId, message.targetStage);
           await this._loadAndSendData(); // Refresh data
           vscode.window.showInformationMessage(`Item moved to ${message.targetStage}`);
           break;
 
         case 'openItem':
+          if (!message.itemId) throw new Error('Invalid openItem payload');
           await this._openItem(message.itemId);
           break;
 
         case 'deleteItem':
+          if (!message.itemId) throw new Error('Invalid deleteItem payload');
           await deleteItemById(this._workspaceRoot, message.itemId);
           this._panel.webview.postMessage({
             type: 'itemDeleted',
@@ -110,8 +126,80 @@ export class KanbanPanel {
           vscode.window.showInformationMessage('Item deleted');
           break;
 
+        case 'updateItem':
+          if (!message.item || !message.item.id) throw new Error('Invalid updateItem payload');
+          // We need to read the existing item to preserve other fields
+          const existingItem = await readItemById(this._workspaceRoot, message.item.id);
+          if (existingItem) {
+             await updateItem(this._workspaceRoot, message.item.id, {
+               title: message.item.title,
+               // We only support updating title for now via this message
+             });
+             await this._loadAndSendData();
+             vscode.window.showInformationMessage(`Item updated: ${message.item.title}`);
+          }
+          break;
+
         case 'copyWithContext':
           await this._copyWithContext(message.itemId, message.mode);
+          break;
+
+        case 'createTask':
+          await createItem(this._workspaceRoot, {
+            title: message.title,
+            stage: message.stage,
+            type: 'task',
+            phaseId: message.phaseId,
+            tags: message.tags,
+          });
+          await this._loadAndSendData();
+          vscode.window.showInformationMessage(`Task created: ${message.title}`);
+          break;
+
+        case 'createPhase':
+          await createItem(this._workspaceRoot, {
+            title: message.title,
+            stage: message.stage,
+            type: 'phase',
+            tags: message.tags,
+          });
+          await this._loadAndSendData();
+          vscode.window.showInformationMessage(`Phase created: ${message.title}`);
+          break;
+
+        case 'getAgent':
+          const agent = await this._agentManager.getAgent(message.agentId);
+          if (agent) {
+            this._panel.webview.postMessage({
+              type: 'agentData',
+              agent,
+            });
+          } else {
+            vscode.window.showErrorMessage(`Agent ${message.agentId} not found`);
+          }
+          break;
+
+        case 'listAgents':
+          const agents = await this._agentManager.listAgents();
+          this._panel.webview.postMessage({
+            type: 'agentList',
+            agents,
+          });
+          break;
+
+        case 'getContext':
+          const contextContent = await readContextFile(message.contextType, message.contextId);
+          this._panel.webview.postMessage({
+            type: 'contextData',
+            contextType: message.contextType,
+            contextId: message.contextId,
+            content: contextContent
+          });
+          break;
+
+        case 'saveContext':
+          await writeContextFile(message.contextType, message.contextId, message.content);
+          vscode.window.showInformationMessage(`Saved ${message.contextType}: ${message.contextId}`);
           break;
 
         default:
@@ -161,18 +249,21 @@ export class KanbanPanel {
         return;
       }
 
-      // Find the file path
-      const stageFolderName = item.stage === 'queue' ? '1-queue' :
-                              item.stage === 'plan' ? '2-planning' :
-                              item.stage === 'code' ? '3-coding' :
-                              item.stage === 'audit' ? '4-auditing' : '5-completed';
+      // Find the file path using fs-adapter logic
+      // We can reconstruct the path since we know the stage and ID, and we're using canonical paths now
+      // But to be safe and support legacy, we should probably expose a findItemPath function in fs-adapter
+      // For now, we'll use the stage from the item to construct the path, assuming canonical folder structure for new items
+      // and checking legacy folders if needed.
+      
+      // Actually, readItemById already found the item, but it returns a FlatItem which doesn't have the full path.
+      // Let's use findItemById from fs-adapter which returns the path.
+      const { findItemById } = await import('../core/fs-adapter.js');
+      const filePath = await findItemById(itemId);
 
-      const filePath = path.join(
-        this._workspaceRoot,
-        '.llmkanban',
-        stageFolderName,
-        `${itemId}.md`
-      );
+      if (!filePath) {
+         vscode.window.showErrorMessage(`Item file for ${itemId} not found`);
+         return;
+      }
 
       const doc = await vscode.workspace.openTextDocument(filePath);
       await vscode.window.showTextDocument(doc);

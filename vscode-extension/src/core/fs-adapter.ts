@@ -177,6 +177,32 @@ export async function readContextFile(type: 'stage' | 'phase' | 'agent' | 'conte
 }
 
 /**
+ * Writes a context file (stage or phase context)
+ */
+export async function writeContextFile(type: 'stage' | 'phase' | 'agent' | 'context', id: string, content: string): Promise<void> {
+  let contextPath: string;
+
+  if (type === 'stage') {
+    contextPath = path.join(getKanbanRootPath(), '_context', 'stages', `${id}.md`);
+  } else if (type === 'phase') {
+    contextPath = path.join(getKanbanRootPath(), '_context', 'phases', `${id}.md`);
+  } else if (type === 'agent') {
+    contextPath = path.join(getKanbanRootPath(), '_context', 'agents', `${id}.md`);
+  } else {
+    // context
+    contextPath = path.join(getKanbanRootPath(), '_context', `${id}.md`);
+  }
+
+  const validatedPath = validatePath(contextPath);
+  const dirPath = path.dirname(validatedPath);
+
+  // Create parent directory if it doesn't exist
+  await fs.mkdir(dirPath, { recursive: true });
+
+  await fs.writeFile(validatedPath, content, 'utf-8');
+}
+
+/**
  * Finds an item by ID across all stage folders
  */
 export async function findItemById(itemId: string): Promise<string | null> {
@@ -278,7 +304,7 @@ export function generateFilename(stage: Stage, id: string): string {
  * Load all items from all stages
  */
 export async function loadAllItems(): Promise<Item[]> {
-  const stages: Stage[] = ['queue', 'plan', 'code', 'audit', 'completed'];
+  const stages: Stage[] = ['queue', 'plan', 'code', 'audit', 'completed', 'chat'];
   const allItems: Item[] = [];
 
   for (const stage of stages) {
@@ -638,4 +664,65 @@ export async function migrateToCanonicalFilenames(workspaceRoot: string): Promis
       await fs.rename(oldPath, newPath);
     }
   }
+}
+
+/**
+ * Updates an item's frontmatter (higher-level function for extension)
+ * @param workspaceRoot - Workspace root path
+ * @param itemId - Item ID
+ * @param updates - Partial updates for the item
+ */
+export async function updateItem(
+  workspaceRoot: string,
+  itemId: string,
+  updates: {
+    title?: string;
+    stage?: Stage;
+    phaseId?: string;
+    tags?: string[];
+    agent?: string;
+    contexts?: string[];
+  }
+): Promise<void> {
+  const { updateFrontmatterOnly } = await import('./context-injector.js');
+  
+  // Find the item
+  const stages: Stage[] = ['queue', 'plan', 'code', 'audit', 'completed', 'chat'];
+  const stageFolderMap: Record<Stage, string[]> = {
+    queue: ['queue', '1-queue'],
+    plan: ['plan', 'planning', '2-planning'],
+    code: ['code', 'coding', '3-coding'],
+    audit: ['audit', 'auditing', '4-auditing'],
+    completed: ['completed', '5-completed'],
+    chat: ['chat']
+  };
+
+  let currentPath: string | null = null;
+  let currentContent: string | null = null;
+
+  outerLoop:
+  for (const stage of stages) {
+    const folders = stageFolderMap[stage];
+    for (const folder of folders) {
+      const filePath = path.join(workspaceRoot, '.llmkanban', folder, `${itemId}.md`);
+      try {
+        const content = await fs.readFile(filePath, 'utf-8');
+        currentPath = filePath;
+        currentContent = content;
+        break outerLoop;
+      } catch {
+        continue;
+      }
+    }
+  }
+
+  if (!currentPath || !currentContent) {
+    throw new Error(`Item ${itemId} not found`);
+  }
+
+  // Update frontmatter
+  const newContent = await updateFrontmatterOnly(currentContent, currentPath, updates);
+  
+  // Write back
+  await fs.writeFile(currentPath, newContent, 'utf-8');
 }

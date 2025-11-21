@@ -12,6 +12,9 @@ export interface Item {
   created: string;
   updated: string;
   userContent?: string;
+  agent?: string;
+  contexts?: string[];
+  managedSection?: string;
 }
 
 export interface BoardData {
@@ -30,13 +33,28 @@ export interface ColumnConfig {
   color: string;
 }
 
+export interface Agent {
+  id: string;
+  name: string;
+  description?: string;
+  systemPrompt: string;
+  config?: {
+    model?: string;
+    temperature?: number;
+    [key: string]: any;
+  };
+}
+
 // Messages from extension to webview
 export type ExtensionMessage =
   | { type: 'init'; data: BoardData }
   | { type: 'itemCreated'; item: Item }
   | { type: 'itemUpdated'; item: Item }
   | { type: 'itemDeleted'; itemId: string }
-  | { type: 'error'; message: string };
+  | { type: 'error'; message: string }
+  | { type: 'agentData'; agent: Agent }
+  | { type: 'agentList'; agents: Agent[] }
+  | { type: 'contextData'; contextType: 'stage' | 'phase' | 'agent' | 'context'; content: string; contextId: string };
 
 // Messages from webview to extension
 export type WebviewMessage =
@@ -46,4 +64,9 @@ export type WebviewMessage =
   | { type: 'deleteItem'; itemId: string }
   | { type: 'createTask'; title: string; stage: Stage; phaseId?: string; tags: string[] }
   | { type: 'createPhase'; title: string; stage: Stage; tags: string[] }
-  | { type: 'copyWithContext'; itemId: string; mode: 'full' | 'context' | 'user' };
+  | { type: 'copyWithContext'; itemId: string; mode: 'full' | 'context' | 'user' }
+  | { type: 'updateItem'; item: Item }
+  | { type: 'getAgent'; agentId: string }
+  | { type: 'getContext'; contextType: 'stage' | 'phase' | 'agent' | 'context'; contextId: string }
+  | { type: 'saveContext'; contextType: 'stage' | 'phase' | 'agent' | 'context'; contextId: string; content: string }
+  | { type: 'listAgents' };

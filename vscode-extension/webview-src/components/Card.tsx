@@ -1,119 +1,163 @@
 import React from 'react';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { Item } from '../types';
+import { Button } from './ui/Button';
 
 interface CardProps {
   item: Item;
-  isDragging?: boolean;
-  onOpenItem?: (itemId: string) => void;
-  onDeleteItem?: (itemId: string) => void;
+  onOpen: (id: string) => void;
+  onDelete: (id: string) => void;
+  onCopy?: (id: string, mode: 'full' | 'context' | 'user') => void;
+  onUpdate?: (item: Item) => void;
 }
 
-const Card: React.FC<CardProps> = ({ item, isDragging, onOpenItem, onDeleteItem }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging: isSortableDragging,
-  } = useSortable({ id: item.id });
+export const Card: React.FC<CardProps> = ({ item, onOpen, onDelete, onCopy, onUpdate }) => {
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [editTitle, setEditTitle] = React.useState(item.title);
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isSortableDragging ? 0.5 : 1,
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData('text/plain', item.id);
+    e.dataTransfer.effectAllowed = 'move';
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 60) {
-      return `${diffMins}m ago`;
-    } else if (diffHours < 24) {
-      return `${diffHours}h ago`;
-    } else if (diffDays < 7) {
-      return `${diffDays}d ago`;
-    } else {
-      return date.toLocaleDateString();
-    }
-  };
-
-  const handleClick = (e: React.MouseEvent) => {
-    // Don't trigger if dragging
-    if (isDragging || isSortableDragging) return;
-
-    // Don't trigger if clicking on action buttons
-    if ((e.target as HTMLElement).closest('.card-actions')) return;
-
-    onOpenItem?.(item.id);
-  };
-
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onDeleteItem?.(item.id);
+  const getIcon = () => {
+    if (item.type === 'phase') return '📦';
+    return '📝';
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`card ${item.type === 'phase' ? 'card-phase' : 'card-task'} ${isDragging ? 'dragging' : ''}`}
-      onClick={handleClick}
-      {...attributes}
-      {...listeners}
+    <div 
+      className="card group"
+      draggable
+      onDragStart={handleDragStart}
+      onClick={() => onOpen(item.id)}
     >
       <div className="card-header">
-        <span className="card-type-icon">
-          {item.type === 'phase' ? '📦' : '✅'}
+        <span className="text-xs font-medium text-muted-foreground opacity-70">
+          {item.id}
         </span>
-        <h3 className="card-title">{item.title}</h3>
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button 
+            variant="icon" 
+            size="sm" 
+            className="h-6 w-6"
+            onClick={(e) => {
+              e.stopPropagation();
+              onCopy?.(item.id, 'full');
+            }}
+            title="Copy with context"
+          >
+            📋
+          </Button>
+          
+          {showDeleteConfirm ? (
+            <div className="flex items-center gap-1 bg-surface shadow-lg rounded p-1 absolute right-0 top-0 z-10 border border-destructive">
+              <span className="text-[10px] text-destructive font-bold px-1">Sure?</span>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-5 w-5 text-[10px]"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(item.id);
+                }}
+              >
+                ✓
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-5 w-5 text-[10px]"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowDeleteConfirm(false);
+                }}
+              >
+                ✕
+              </Button>
+            </div>
+          ) : (
+            <Button 
+              variant="icon" 
+              size="sm" 
+              className="h-6 w-6 text-destructive hover:text-destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDeleteConfirm(true);
+              }}
+              title="Delete"
+            >
+              🗑️
+            </Button>
+          )}
+        </div>
       </div>
 
-      {item.tags.length > 0 && (
-        <div className="card-tags">
-          {item.tags.map(tag => (
-            <span key={tag} className="tag">
-              {tag}
-            </span>
-          ))}
+      {isEditing ? (
+        <div className="mb-2" onClick={e => e.stopPropagation()}>
+          <input
+            type="text"
+            value={editTitle}
+            onChange={e => setEditTitle(e.target.value)}
+            className="w-full bg-input border border-primary rounded px-2 py-1 text-sm text-text-primary outline-none"
+            autoFocus
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                onUpdate?.({ ...item, title: editTitle });
+                setIsEditing(false);
+              } else if (e.key === 'Escape') {
+                setEditTitle(item.title);
+                setIsEditing(false);
+              }
+            }}
+            onBlur={() => {
+              setEditTitle(item.title);
+              setIsEditing(false);
+            }}
+          />
         </div>
+      ) : (
+        <h3 
+          className="card-title group/title relative"
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            setIsEditing(true);
+          }}
+        >
+          <span className="mr-2">{getIcon()}</span>
+          {item.title}
+          <span className="opacity-0 group-hover/title:opacity-100 absolute right-0 top-0 text-xs text-text-muted">
+            ✎
+          </span>
+        </h3>
       )}
 
-      <div className="card-metadata">
-        <div className="metadata-row">
-          <span className="metadata-label">ID:</span>
-          <span className="metadata-value">{item.id}</span>
-        </div>
-        {item.phaseId && (
-          <div className="metadata-row">
-            <span className="metadata-label">Phase:</span>
-            <span className="metadata-value">{item.phaseId}</span>
-          </div>
+      <div className="card-meta flex-wrap">
+        {item.agent && (
+          <span className="tag bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+            🤖 {item.agent}
+          </span>
         )}
-        <div className="metadata-row">
-          <span className="metadata-label">Updated:</span>
-          <span className="metadata-value">{formatDate(item.updated)}</span>
-        </div>
+        {item.contexts && item.contexts.length > 0 && (
+          <span className="tag bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            📚 {item.contexts.length} ctx
+          </span>
+        )}
+        {item.tags.map(tag => (
+          <span key={tag} className="tag">
+            {tag}
+          </span>
+        ))}
       </div>
-
-      <div className="card-actions">
-        <button
-          className="card-action-btn delete-btn"
-          onClick={handleDelete}
-          title="Delete item"
-        >
-          🗑️
-        </button>
+      
+      <div className="mt-3 flex justify-between items-center text-xs text-muted">
+        <span>{new Date(item.updated).toLocaleDateString()}</span>
+        {item.phaseId && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-hover">
+            {item.phaseId}
+          </span>
+        )}
       </div>
     </div>
   );
 };
-
-export default Card;

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Board from './components/Board';
-import { BoardData, ExtensionMessage, WebviewMessage, Item } from './types';
+import { Modal } from './components/ui/Modal';
+import { ContextEditor } from './components/ContextEditor';
+import { BoardData, Stage, WebviewMessage, ExtensionMessage, Agent, Item } from './types';
 
 // @ts-ignore
 const vscode = acquireVsCodeApi();
@@ -14,6 +16,13 @@ const App: React.FC = () => {
     audit: [],
     completed: [],
   });
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [activeContext, setActiveContext] = useState<{
+    type: 'stage' | 'phase' | 'agent' | 'context';
+    id: string;
+    content: string;
+  } | null>(null);
+  const [isSavingContext, setIsSavingContext] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTag, setFilterTag] = useState<string>('');
@@ -48,7 +57,26 @@ const App: React.FC = () => {
 
         case 'error':
           console.error('Error from extension:', message.message);
-          // TODO: Show error toast
+          // Simple alert for now, ideally use a toast component
+          alert(`Error: ${message.message}`);
+          break;
+
+        case 'agentData':
+          console.log('Received agent data:', message.agent);
+          // TODO: Store in state or pass to a modal
+          break;
+
+        case 'agentList':
+          console.log('Received agent list:', message.agents);
+          setAgents(message.agents);
+          break;
+
+        case 'contextData':
+          setActiveContext({
+            type: message.contextType,
+            id: message.contextId,
+            content: message.content
+          });
           break;
       }
     };
@@ -241,7 +269,43 @@ const App: React.FC = () => {
               sendMessage({ type: 'deleteItem', itemId });
             }
           }}
+          onCopy={(itemId, mode) => {
+            sendMessage({ type: 'copyWithContext', itemId, mode });
+          }}
+          onUpdate={(item) => {
+            sendMessage({ type: 'updateItem', item });
+          }}
         />
+      )}
+
+      {activeContext && (
+        <Modal
+          isOpen={!!activeContext}
+          onClose={() => setActiveContext(null)}
+          title={`Editing ${activeContext.type}: ${activeContext.id}`}
+        >
+          <ContextEditor
+            content={activeContext.content}
+            onSave={(newContent) => {
+              setIsSavingContext(true);
+              sendMessage({
+                type: 'saveContext',
+                contextType: activeContext.type,
+                contextId: activeContext.id,
+                content: newContent
+              });
+              // Optimistic update or wait for confirm? 
+              // For now, let's just close/reset saving state after a brief delay or assume success
+              setTimeout(() => {
+                setIsSavingContext(false);
+                // Optional: close modal on save? Or keep open?
+                // Let's keep open to allow more edits
+              }, 500);
+            }}
+            onClose={() => setActiveContext(null)}
+            isSaving={isSavingContext}
+          />
+        </Modal>
       )}
     </div>
   );

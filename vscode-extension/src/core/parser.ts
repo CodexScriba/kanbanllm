@@ -70,6 +70,15 @@ export const FrontmatterSchema = z.object({
   temperature: z.number().optional(),
 });
 
+export const AgentFrontmatterSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().optional(),
+  model: z.string().optional(),
+  temperature: z.number().optional(),
+  // Allow other fields but don't validate them strictly
+}).passthrough();
+
 /**
  * Parses a markdown file with frontmatter
  * Splits content into managed section and user content

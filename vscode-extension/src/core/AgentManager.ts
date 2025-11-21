@@ -1,8 +1,8 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { getKanbanRootPath } from './fs-adapter';
-import { parseItem } from './parser';
-import type { Frontmatter } from './types';
+import { AgentFrontmatterSchema } from './parser';
+import matter from 'gray-matter';
 
 export interface Agent {
   id: string;
@@ -24,16 +24,18 @@ export class AgentManager {
     try {
       const agentPath = path.join(getKanbanRootPath(), '_context', 'agents', `${agentId}.md`);
       const content = await fs.readFile(agentPath, 'utf-8');
-      const item = parseItem(content, agentPath);
+      
+      const { data, content: bodyContent } = matter(content);
+      const frontmatter = AgentFrontmatterSchema.parse(data);
       
       return {
         id: agentId,
-        name: item.frontmatter.title,
-        description: item.frontmatter.description, // Assuming description might be added to frontmatter or just use title
-        systemPrompt: item.body,
+        name: frontmatter.title,
+        description: frontmatter.description,
+        systemPrompt: bodyContent.trim(),
         config: {
-          model: item.frontmatter.model, // Assuming model might be in frontmatter
-          temperature: item.frontmatter.temperature,
+          model: frontmatter.model,
+          temperature: frontmatter.temperature,
         }
       } as Agent;
     } catch (error) {
