@@ -4,6 +4,8 @@ import { Modal } from './components/ui/Modal';
 import { Button } from './components/ui/Button';
 import { ContextEditor } from './components/ContextEditor';
 import { TaskForm, TaskFormData } from './components/TaskForm';
+import { ErrorPopup } from './components/ErrorPopup';
+import { ToastContainer, useToast } from './components/Toast';
 import { BoardData, Stage, WebviewMessage, ExtensionMessage, Agent, Item, ContextMetadata } from './types';
 
 // @ts-ignore
@@ -32,6 +34,8 @@ const App: React.FC = () => {
   const [filterTag, setFilterTag] = useState<string>('');
   const [filterPhase, setFilterPhase] = useState<string>('');
   const [sortBy, setSortBy] = useState<'updated' | 'created' | 'title'>('updated');
+  const [error, setError] = useState<{ message: string; details?: string } | null>(null);
+  const { toasts, showToast, dismissToast } = useToast();
 
   useEffect(() => {
     // Notify extension that webview is ready
@@ -52,34 +56,44 @@ const App: React.FC = () => {
 
         case 'itemCreated':
           addItem(message.item);
+          showToast({
+            type: 'success',
+            title: 'Item created successfully',
+            message: message.item.title,
+          });
           break;
 
         case 'itemUpdated':
           updateItem(message.item);
+          showToast({
+            type: 'info',
+            title: 'Item updated',
+            message: message.item.title,
+          });
           break;
 
         case 'itemDeleted':
           removeItem(message.itemId);
+          showToast({
+            type: 'info',
+            title: 'Item deleted',
+          });
           break;
 
         case 'error':
           console.error('Error from extension:', message.message);
-          // Simple alert for now, ideally use a toast component
-          alert(`Error: ${message.message}`);
+          setError({ message: message.message });
           break;
 
         case 'agentData':
-          console.log('Received agent data:', message.agent);
-          // TODO: Store in state or pass to a modal
+          // Agent data received, could be used for editing
           break;
 
         case 'agentList':
-          console.log('Received agent list:', message.agents);
           setAgents(message.agents);
           break;
 
         case 'contextList':
-          console.log('Received context list:', message.contexts);
           setContexts(message.contexts);
           break;
 
@@ -94,7 +108,22 @@ const App: React.FC = () => {
     };
 
     window.addEventListener('message', messageHandler);
-    return () => window.removeEventListener('message', messageHandler);
+
+    // Keyboard shortcuts
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+Shift+N or Cmd+Shift+N to create new task
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'N') {
+        e.preventDefault();
+        setIsTaskFormOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('message', messageHandler);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   const sendMessage = (message: WebviewMessage) => {
@@ -277,8 +306,14 @@ const App: React.FC = () => {
             audit: getFilteredItems(boardData.audit),
             completed: getFilteredItems(boardData.completed),
           }}
+          loading={loading}
           onMoveItem={(itemId, targetStage) => {
             sendMessage({ type: 'moveItem', itemId, targetStage });
+            showToast({
+              type: 'info',
+              title: `Moving to ${targetStage}`,
+              message: 'Context will be updated',
+            });
           }}
           onOpenItem={(itemId) => {
             sendMessage({ type: 'openItem', itemId });
@@ -290,6 +325,11 @@ const App: React.FC = () => {
           }}
           onCopy={(itemId, mode) => {
             sendMessage({ type: 'copyWithContext', itemId, mode });
+            showToast({
+              type: 'success',
+              title: 'Copied to clipboard',
+              message: `${mode === 'full' ? 'Full context' : mode === 'context' ? 'Context only' : 'User content'} mode`,
+            });
           }}
           onUpdate={(item) => {
             sendMessage({ type: 'updateItem', item });
@@ -328,6 +368,7 @@ const App: React.FC = () => {
           .flat()
           .filter(item => item.type === 'phase')
           .map(item => ({ id: item.id, title: item.title }))}
+        allTags={allTags}
       />
 
       {activeContext && (
@@ -346,12 +387,14 @@ const App: React.FC = () => {
                 contextId: activeContext.id,
                 content: newContent
               });
-              // Optimistic update or wait for confirm? 
-              // For now, let's just close/reset saving state after a brief delay or assume success
+              // Show success toast and close after brief delay
               setTimeout(() => {
                 setIsSavingContext(false);
-                // Optional: close modal on save? Or keep open?
-                // Let's keep open to allow more edits
+                showToast({
+                  type: 'success',
+                  title: 'Context saved',
+                  message: `${activeContext.type}: ${activeContext.id}`,
+                });
               }, 500);
             }}
             onClose={() => setActiveContext(null)}
@@ -359,6 +402,16 @@ const App: React.FC = () => {
           />
         </Modal>
       )}
+
+      {error && (
+        <ErrorPopup
+          message={error.message}
+          details={error.details}
+          onClose={() => setError(null)}
+        />
+      )}
+
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 };

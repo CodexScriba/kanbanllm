@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
+import { ContextSelector } from './ContextSelector';
+import { AgentDropdown } from './AgentDropdown';
+import { TagEditor } from './TagEditor';
 import { Stage, Agent, ContextMetadata } from '../types';
 
 export interface TaskFormData {
@@ -23,6 +26,7 @@ interface TaskFormProps {
   agents: Agent[];
   contexts: ContextMetadata[];
   phases: Array<{ id: string; title: string }>;
+  allTags?: string[]; // For tag autocomplete
 }
 
 export const TaskForm: React.FC<TaskFormProps> = ({
@@ -33,6 +37,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   agents,
   contexts,
   phases,
+  allTags = [],
 }) => {
   const [formData, setFormData] = useState<TaskFormData>({
     title: '',
@@ -47,7 +52,6 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [tagInput, setTagInput] = useState('');
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -64,7 +68,6 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         initialContent: '',
       });
       setErrors({});
-      setTagInput('');
     }
   }, [isOpen, defaultStage]);
 
@@ -96,24 +99,6 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      const tag = tagInput.trim();
-      if (tag && !formData.tags.includes(tag)) {
-        setFormData(prev => ({ ...prev, tags: [...prev.tags, tag] }));
-        setTagInput('');
-      }
-    }
-  };
-
-  const removeTag = (tagToRemove: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove),
-    }));
   };
 
   const toggleContext = (contextId: string) => {
@@ -227,79 +212,39 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
         {/* Agent */}
         <div className="form-group">
-          <label htmlFor="agent" className="form-label">
+          <label className="form-label">
             Agent
           </label>
-          <select
-            id="agent"
-            className="form-select"
-            value={formData.agent || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, agent: e.target.value || undefined }))}
-          >
-            <option value="">⊘ None</option>
-            {agents.map(agent => (
-              <option key={agent.id} value={agent.id}>
-                🤖 {agent.name} ({agent.config?.model || 'default'}, temp: {agent.config?.temperature ?? 0.7})
-              </option>
-            ))}
-          </select>
+          <AgentDropdown
+            agents={agents}
+            selectedId={formData.agent}
+            onChange={(agentId) => setFormData(prev => ({ ...prev, agent: agentId }))}
+          />
         </div>
 
         {/* Contexts */}
         <div className="form-group">
           <label className="form-label">
-            Contexts ({formData.contexts.length} selected)
+            Contexts
           </label>
-          <div className="context-selector">
-            {Object.entries(groupedContexts).map(([type, ctxList]) => (
-              <div key={type} className="context-group">
-                <div className="context-group-header">
-                  📁 {type.charAt(0).toUpperCase() + type.slice(1)}s
-                </div>
-                {ctxList.map(ctx => (
-                  <label key={ctx.id} className="context-item">
-                    <input
-                      type="checkbox"
-                      checked={formData.contexts.includes(ctx.id)}
-                      onChange={() => toggleContext(ctx.id)}
-                    />
-                    <span>{ctx.name}</span>
-                  </label>
-                ))}
-              </div>
-            ))}
-          </div>
+          <ContextSelector
+            contexts={contexts}
+            selectedIds={formData.contexts}
+            onChange={(newIds) => setFormData(prev => ({ ...prev, contexts: newIds }))}
+          />
         </div>
 
         {/* Tags */}
         <div className="form-group">
-          <label htmlFor="tags" className="form-label">
+          <label className="form-label">
             Tags
           </label>
-          <div className="tag-editor">
-            {formData.tags.map(tag => (
-              <span key={tag} className="tag-chip">
-                {tag}
-                <button
-                  type="button"
-                  className="tag-remove"
-                  onClick={() => removeTag(tag)}
-                  aria-label={`Remove ${tag}`}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-            <input
-              id="tags"
-              type="text"
-              className="tag-input"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={handleTagInputKeyDown}
-              placeholder="Add tag..."
-            />
-          </div>
+          <TagEditor
+            tags={formData.tags}
+            onChange={(newTags) => setFormData(prev => ({ ...prev, tags: newTags }))}
+            allTags={allTags}
+            placeholder="Add tag..."
+          />
         </div>
 
         {/* Initial Content */}

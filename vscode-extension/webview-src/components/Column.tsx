@@ -1,10 +1,12 @@
 import React from 'react';
 import { Item, Stage, ColumnConfig } from '../types';
 import { Card } from './Card';
+import { SkeletonCards } from './SkeletonCard';
 
 interface ColumnProps {
   config: ColumnConfig;
   items: Item[];
+  loading?: boolean;
   onMoveItem: (itemId: string, targetStage: Stage) => void;
   onOpenItem: (itemId: string) => void;
   onDeleteItem: (itemId: string) => void;
@@ -16,6 +18,7 @@ interface ColumnProps {
 export const Column: React.FC<ColumnProps> = ({
   config,
   items,
+  loading = false,
   onMoveItem,
   onOpenItem,
   onDeleteItem,
@@ -62,17 +65,21 @@ export const Column: React.FC<ColumnProps> = ({
       </div>
 
       <div className="column-content custom-scrollbar">
-        {items.map(item => (
-          <Card
-            key={item.id}
-            item={item}
-            onOpen={onOpenItem}
-            onDelete={onDeleteItem}
-            onCopy={onCopy}
-            onUpdate={onUpdate}
-            onContextClick={onContextClick}
-          />
-        ))}
+        {loading ? (
+          <SkeletonCards count={3} />
+        ) : (
+          items.map(item => (
+            <Card
+              key={item.id}
+              item={item}
+              onOpen={onOpenItem}
+              onDelete={onDeleteItem}
+              onCopy={onCopy}
+              onUpdate={onUpdate}
+              onContextClick={onContextClick}
+            />
+          ))
+        )}
       </div>
     </div>
   );

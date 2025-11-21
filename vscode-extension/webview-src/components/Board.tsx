@@ -4,6 +4,7 @@ import { Column } from './Column';
 
 interface BoardProps {
   data: BoardData;
+  loading?: boolean;
   onMoveItem: (itemId: string, targetStage: Stage) => void;
   onOpenItem: (itemId: string) => void;
   onDeleteItem: (itemId: string) => void;
@@ -21,7 +22,7 @@ const COLUMNS: ColumnConfig[] = [
   { id: 'completed', title: 'Done', icon: '✅', color: '#22c55e' },
 ];
 
-const Board: React.FC<BoardProps> = ({ data, onMoveItem, onOpenItem, onDeleteItem, onCopy, onUpdate, onContextClick }) => {
+const Board: React.FC<BoardProps> = ({ data, loading = false, onMoveItem, onOpenItem, onDeleteItem, onCopy, onUpdate, onContextClick }) => {
   return (
     <div className="board-container">
       {COLUMNS.map(col => (
@@ -29,6 +30,7 @@ const Board: React.FC<BoardProps> = ({ data, onMoveItem, onOpenItem, onDeleteIte
           key={col.id}
           config={col}
           items={data[col.id] || []}
+          loading={loading}
           onMoveItem={onMoveItem}
           onOpenItem={onOpenItem}
           onDeleteItem={onDeleteItem}

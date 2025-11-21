@@ -219,11 +219,22 @@ Root component. Manages board state and message passing.
 - `boardData` - Items grouped by stage
 - `activeContext` - Currently editing context
 - `agents` - Available agents
+- `contexts` - Available contexts (Phase 1)
+- `isTaskFormOpen` - Task form modal state (Phase 1)
+- `error` - Error state for ErrorPopup (Phase 1)
 - Search/filter state
 
 **Message Handling**:
 - Sends messages to extension via `vscode.postMessage()`
 - Receives updates via `window.addEventListener('message')`
+
+**Keyboard Shortcuts** (Phase 1):
+- `Ctrl+Shift+N` / `Cmd+Shift+N` - Open task creation form
+
+**Features** (Phase 1):
+- Integrated TaskForm for creating tasks/phases
+- Error handling with ErrorPopup
+- Auto-fetch agents and contexts on load
 
 #### **`components/Board.tsx`**
 Renders Kanban columns with horizontal scrolling.
@@ -277,14 +288,120 @@ Monaco editor wrapper for contexts.
 - Save/cancel actions
 - Loading state
 
+#### **`components/TaskForm.tsx`** ⭐ NEW (Phase 1)
+Comprehensive task/phase creation form.
+
+**Features**:
+- All fields: title, type, stage, phase, agent, contexts, tags, content
+- Form validation (required fields)
+- Integrated ContextSelector and AgentDropdown
+- Inline tag editor (add/remove)
+- Submit error handling
+- Loading states
+
+**Props**:
+- `isOpen` - Modal visibility
+- `onClose` - Close handler
+- `onSubmit` - Form submission handler
+- `agents` - Available agents
+- `contexts` - Available contexts
+- `phases` - Available phases
+
+#### **`components/ContextSelector.tsx`** ⭐ NEW (Phase 1)
+Multi-select context picker with search and grouping.
+
+**Features**:
+- Search/filter by name or ID
+- Grouped by type (Stages, Phases, Agents, Custom)
+- Collapsible groups
+- Selected count badge
+- File size metadata display
+- Custom checkboxes with liquid glass styling
+
+**Props**:
+- `contexts` - Available contexts
+- `selectedIds` - Currently selected context IDs
+- `onChange` - Selection change handler
+
+#### **`components/AgentDropdown.tsx`** ⭐ NEW (Phase 1)
+Rich agent selection dropdown with search.
+
+**Features**:
+- Custom trigger with selected agent display
+- Search/filter agents
+- Agent metadata (model, temperature, description)
+- "None" option to unassign
+- Visual selection indicators
+- Backdrop click-to-close
+
+**Props**:
+- `agents` - Available agents
+- `selectedId` - Currently selected agent ID
+- `onChange` - Selection change handler
+
+#### **`components/ErrorPopup.tsx`** ⭐ NEW (Phase 1)
+Error display modal with expandable details.
+
+**Features**:
+- Error message display
+- Expandable error details (stack traces, etc.)
+- Optional retry button
+- Close button
+- Liquid glass styling
+
+**Props**:
+- `message` - Error message
+- `details` - Optional error details
+- `onClose` - Close handler
+- `onRetry` - Optional retry handler
+
+#### **`components/Toast.tsx`** ⭐ NEW (Phase 2)
+Toast notification system with auto-dismiss.
+
+**Features**:
+- Success, Info, Warning types
+- Auto-dismiss (3.5s default)
+- Manual dismiss button
+- Slide-in animation from right
+- Bottom-right positioning
+- Stacked display for multiple toasts
+
+**Exports**:
+- `ToastContainer` - Renders all active toasts
+- `useToast` - Hook for managing toast state
+
+**Hook API**:
+```typescript
+const { toasts, showToast, dismissToast } = useToast();
+showToast({ type: 'success', title: 'Item created', message: 'Task title' });
+```
+
+#### **`components/SkeletonCard.tsx`** ⭐ NEW (Phase 2)
+Loading placeholder cards with shimmer effect.
+
+**Features**:
+- Shimmer animation (2s infinite)
+- Matches real card dimensions
+- Liquid glass styling
+- Configurable count
+
+**Exports**:
+- `SkeletonCard` - Single skeleton card
+- `SkeletonCards` - Multiple skeleton cards
+
+**Props**:
+- `count` - Number of skeleton cards to render (default: 3)
+
 #### **`styles/board.css`**
 Design system with CSS variables.
 
 **Features**:
-- Glassmorphism effects
-- Color palette
+- Glassmorphism/liquid glass effects
+- Color palette (dark mode)
 - Utility classes
 - Animations
+- Form styles (Phase 1)
+- Component-specific styles (ContextSelector, AgentDropdown, ErrorPopup)
 
 #### **`types.ts`**
 Frontend type definitions.
