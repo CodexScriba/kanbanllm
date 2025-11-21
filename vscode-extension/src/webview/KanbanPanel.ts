@@ -187,6 +187,15 @@ export class KanbanPanel {
           });
           break;
 
+        case 'listContexts':
+          const { listContexts } = await import('../core/fs-adapter.js');
+          const contexts = await listContexts(this._workspaceRoot);
+          this._panel.webview.postMessage({
+            type: 'contextList',
+            contexts,
+          });
+          break;
+
         case 'getContext':
           const contextContent = await readContextFile(message.contextType, message.contextId);
           this._panel.webview.postMessage({

@@ -45,6 +45,14 @@ export interface Agent {
   };
 }
 
+export interface ContextMetadata {
+  id: string;
+  name: string;
+  type: 'stage' | 'phase' | 'agent' | 'context';
+  path: string;
+  size: number;
+}
+
 // Messages from extension to webview
 export type ExtensionMessage =
   | { type: 'init'; data: BoardData }
@@ -54,7 +62,8 @@ export type ExtensionMessage =
   | { type: 'error'; message: string }
   | { type: 'agentData'; agent: Agent }
   | { type: 'agentList'; agents: Agent[] }
-  | { type: 'contextData'; contextType: 'stage' | 'phase' | 'agent' | 'context'; content: string; contextId: string };
+  | { type: 'contextData'; contextType: 'stage' | 'phase' | 'agent' | 'context'; content: string; contextId: string }
+  | { type: 'contextList'; contexts: ContextMetadata[] };
 
 // Messages from webview to extension
 export type WebviewMessage =
@@ -69,4 +78,6 @@ export type WebviewMessage =
   | { type: 'getAgent'; agentId: string }
   | { type: 'getContext'; contextType: 'stage' | 'phase' | 'agent' | 'context'; contextId: string }
   | { type: 'saveContext'; contextType: 'stage' | 'phase' | 'agent' | 'context'; contextId: string; content: string }
-  | { type: 'listAgents' };
+  | { type: 'listAgents' }
+  | { type: 'listContexts' };
+

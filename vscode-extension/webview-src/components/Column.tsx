@@ -8,7 +8,8 @@ interface ColumnProps {
   onMoveItem: (itemId: string, targetStage: Stage) => void;
   onOpenItem: (itemId: string) => void;
   onDeleteItem: (itemId: string) => void;
-  onCopy: (itemId: string, mode: 'full' | 'context' | 'user') => void;
+  onCopy?: (itemId: string, mode: 'full' | 'context' | 'user') => void;
+  onContextClick?: (contextType: 'agent' | 'context', contextId: string) => void;
   onUpdate: (item: Item) => void;
 }
 
@@ -19,7 +20,8 @@ export const Column: React.FC<ColumnProps> = ({
   onOpenItem,
   onDeleteItem,
   onCopy,
-  onUpdate
+  onUpdate,
+  onContextClick
 }) => {
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -68,6 +70,7 @@ export const Column: React.FC<ColumnProps> = ({
             onDelete={onDeleteItem}
             onCopy={onCopy}
             onUpdate={onUpdate}
+            onContextClick={onContextClick}
           />
         ))}
       </div>

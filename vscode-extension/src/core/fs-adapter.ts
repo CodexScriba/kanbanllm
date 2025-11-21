@@ -202,6 +202,104 @@ export async function writeContextFile(type: 'stage' | 'phase' | 'agent' | 'cont
   await fs.writeFile(validatedPath, content, 'utf-8');
 }
 
+export interface ContextMetadata {
+  id: string;
+  name: string;
+  type: 'stage' | 'phase' | 'agent' | 'context';
+  path: string;
+  size: number;
+}
+
+/**
+ * Lists all available contexts with metadata
+ * Scans _context/{stages,phases,agents,global}
+ */
+export async function listContexts(workspaceRoot: string): Promise<ContextMetadata[]> {
+  const contexts: ContextMetadata[] = [];
+  const contextRoot = path.join(workspaceRoot, '.llmkanban', '_context');
+
+  const contextTypes: Array<{ type: 'stage' | 'phase' | 'agent' | 'context'; subdir: string }> = [
+    { type: 'stage', subdir: 'stages' },
+    { type: 'phase', subdir: 'phases' },
+    { type: 'agent', subdir: 'agents' },
+  ];
+
+  // Scan each context type directory
+  for (const { type, subdir } of contextTypes) {
+    const dirPath = path.join(contextRoot, subdir);
+    
+    try {
+      const files = await fs.readdir(dirPath);
+      const mdFiles = files.filter(f => f.endsWith('.md'));
+
+      for (const file of mdFiles) {
+        const filePath = path.join(dirPath, file);
+        const id = file.replace('.md', '');
+        
+        try {
+          const stats = await fs.stat(filePath);
+          const content = await fs.readFile(filePath, 'utf-8');
+          
+          // Extract name from first H1 heading or use ID
+          const nameMatch = content.match(/^#\s+(.+)$/m);
+          const name = nameMatch ? nameMatch[1] : id;
+
+          contexts.push({
+            id,
+            name,
+            type,
+            path: filePath,
+            size: stats.size,
+          });
+        } catch {
+          continue;
+        }
+      }
+    } catch (error) {
+      // Directory doesn't exist, skip
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        throw error;
+      }
+    }
+  }
+
+  // Scan root _context directory for custom contexts
+  try {
+    const files = await fs.readdir(contextRoot);
+    const mdFiles = files.filter(f => f.endsWith('.md'));
+
+    for (const file of mdFiles) {
+      const filePath = path.join(contextRoot, file);
+      const id = file.replace('.md', '');
+      
+      try {
+        const stats = await fs.stat(filePath);
+        const content = await fs.readFile(filePath, 'utf-8');
+        
+        const nameMatch = content.match(/^#\s+(.+)$/m);
+        const name = nameMatch ? nameMatch[1] : id;
+
+        contexts.push({
+          id,
+          name,
+          type: 'context',
+          path: filePath,
+          size: stats.size,
+        });
+      } catch {
+        continue;
+      }
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+      throw error;
+    }
+  }
+
+  return contexts;
+}
+
+
 /**
  * Finds an item by ID across all stage folders
  */
@@ -338,6 +436,8 @@ export interface FlatItem {
   stage: Stage;
   type: 'phase' | 'task';
   phaseId?: string;
+  agent?: string;
+  contexts?: string[];
   tags: string[];
   created: string;
   updated: string;
@@ -370,6 +470,8 @@ function flattenItem(item: Item): FlatItem {
     stage: item.frontmatter.stage,
     type: item.frontmatter.type,
     phaseId: item.frontmatter.phase,
+    agent: item.frontmatter.agent,
+    contexts: item.frontmatter.contexts,
     tags: item.frontmatter.tags || [],
     created: item.frontmatter.created,
     updated: item.frontmatter.updated,

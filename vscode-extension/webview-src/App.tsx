@@ -275,6 +275,9 @@ const App: React.FC = () => {
           onUpdate={(item) => {
             sendMessage({ type: 'updateItem', item });
           }}
+          onContextClick={(contextType, contextId) => {
+            sendMessage({ type: 'getContext', contextType, contextId });
+          }}
         />
       )}
 

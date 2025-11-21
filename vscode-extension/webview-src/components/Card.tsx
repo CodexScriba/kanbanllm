@@ -8,9 +8,10 @@ interface CardProps {
   onDelete: (id: string) => void;
   onCopy?: (id: string, mode: 'full' | 'context' | 'user') => void;
   onUpdate?: (item: Item) => void;
+  onContextClick?: (contextType: 'agent' | 'context', contextId: string) => void;
 }
 
-export const Card: React.FC<CardProps> = ({ item, onOpen, onDelete, onCopy, onUpdate }) => {
+export const Card: React.FC<CardProps> = ({ item, onOpen, onDelete, onCopy, onUpdate, onContextClick }) => {
   const [isEditing, setIsEditing] = React.useState(false);
   const [editTitle, setEditTitle] = React.useState(item.title);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
@@ -134,14 +135,33 @@ export const Card: React.FC<CardProps> = ({ item, onOpen, onDelete, onCopy, onUp
 
       <div className="card-meta flex-wrap">
         {item.agent && (
-          <span className="tag bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+          <span 
+            className="tag bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 cursor-pointer hover:bg-indigo-500/30 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              onContextClick?.('agent', item.agent!);
+            }}
+            title="Click to edit agent"
+          >
             🤖 {item.agent}
           </span>
         )}
         {item.contexts && item.contexts.length > 0 && (
-          <span className="tag bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-            📚 {item.contexts.length} ctx
-          </span>
+          <>
+            {item.contexts.map((ctx, idx) => (
+              <span 
+                key={ctx}
+                className="tag bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 cursor-pointer hover:bg-emerald-500/30 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onContextClick?.('context', ctx);
+                }}
+                title={`Click to edit context: ${ctx}`}
+              >
+                📚 {ctx}
+              </span>
+            ))}
+          </>
         )}
         {item.tags.map(tag => (
           <span key={tag} className="tag">

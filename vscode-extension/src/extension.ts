@@ -210,6 +210,46 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  // Migrate workspace to canonical filenames
+  context.subscriptions.push(
+    vscode.commands.registerCommand('llmKanban.migrateWorkspace', async () => {
+      const workspaceRoot = getWorkspaceRoot();
+      if (!workspaceRoot) {
+        vscode.window.showErrorMessage('No workspace folder open');
+        return;
+      }
+
+      const confirm = await vscode.window.showWarningMessage(
+        'This will rename all item files to the canonical format (stage.id.md). Continue?',
+        'Yes', 'No'
+      );
+
+      if (confirm !== 'Yes') {
+        return;
+      }
+
+      try {
+        await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: 'Migrating workspace...',
+          cancellable: false
+        }, async (progress) => {
+          progress.report({ increment: 0, message: 'Renaming files...' });
+          
+          const { migrateToCanonicalFilenames } = await import('./core/fs-adapter.js');
+          await migrateToCanonicalFilenames(workspaceRoot);
+          
+          progress.report({ increment: 100, message: 'Complete' });
+        });
+
+        vscode.window.showInformationMessage('Workspace migration complete!');
+        sidebarProvider.refresh();
+      } catch (error) {
+        vscode.window.showErrorMessage(`Migration failed: ${error}`);
+      }
+    })
+  );
+
   // Settings (placeholder)
   context.subscriptions.push(
     vscode.commands.registerCommand('llmKanban.openSettings', () => {

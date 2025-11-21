@@ -9,6 +9,7 @@ interface BoardProps {
   onDeleteItem: (itemId: string) => void;
   onCopy: (itemId: string, mode: 'full' | 'context' | 'user') => void;
   onUpdate: (item: Item) => void;
+  onContextClick?: (contextType: 'agent' | 'context', contextId: string) => void;
 }
 
 const COLUMNS: ColumnConfig[] = [
@@ -20,7 +21,7 @@ const COLUMNS: ColumnConfig[] = [
   { id: 'completed', title: 'Done', icon: '✅', color: '#22c55e' },
 ];
 
-const Board: React.FC<BoardProps> = ({ data, onMoveItem, onOpenItem, onDeleteItem, onCopy, onUpdate }) => {
+const Board: React.FC<BoardProps> = ({ data, onMoveItem, onOpenItem, onDeleteItem, onCopy, onUpdate, onContextClick }) => {
   return (
     <div className="board-container">
       {COLUMNS.map(col => (
@@ -33,6 +34,7 @@ const Board: React.FC<BoardProps> = ({ data, onMoveItem, onOpenItem, onDeleteIte
           onDeleteItem={onDeleteItem}
           onCopy={onCopy}
           onUpdate={onUpdate}
+          onContextClick={onContextClick}
         />
       ))}
     </div>
