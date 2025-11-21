@@ -1303,3 +1303,79 @@ body {
 .tag-suggestion-item:last-child {
   margin-bottom: 0.25rem;
 }
+
+/* Copy Mode Selector Component */
+.copy-mode-selector {
+  position: relative;
+  display: inline-block;
+}
+
+.copy-mode-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 0.25rem;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  z-index: 50;
+  min-width: 250px;
+  overflow: hidden;
+}
+
+.copy-mode-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.copy-mode-option:hover {
+  background: var(--surface-hover);
+}
+
+.copy-mode-option:first-child {
+  margin-top: 0.25rem;
+}
+
+.copy-mode-option:last-child {
+  margin-bottom: 0.25rem;
+}
+
+.copy-mode-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.copy-mode-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.copy-mode-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.copy-mode-description {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}

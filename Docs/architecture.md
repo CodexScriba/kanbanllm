@@ -392,6 +392,43 @@ Loading placeholder cards with shimmer effect.
 **Props**:
 - `count` - Number of skeleton cards to render (default: 3)
 
+#### **`components/TagEditor.tsx`** ⭐ NEW (Phase 2)
+Inline tag editor with autocomplete.
+
+**Features**:
+- Click × to remove tags
+- Type to add tags (Enter or Comma)
+- Autocomplete from existing board tags
+- Backspace to remove last tag when input empty
+- Dropdown suggestions (max 5)
+- Click outside to close
+
+**Props**:
+- `tags` - Current tags array
+- `onChange` - Callback when tags change
+- `allTags` - All available tags for autocomplete
+- `placeholder` - Input placeholder text
+- `maxTags` - Optional max number of tags
+
+#### **`components/CopyModeSelector.tsx`** ⭐ NEW (Phase 2)
+Dropdown selector for choosing copy modes on cards.
+
+**Features**:
+- 3 copy modes: Full Context, Context Only, User Content
+- Icons and descriptions for each mode
+- Dropdown with liquid glass styling
+- Click outside to close
+- Integrated into Card component
+
+**Props**:
+- `itemId` - ID of the item to copy
+- `onCopy` - Callback when copy mode is selected
+
+**Copy Modes**:
+- `full` - Task + Architecture + Phase + Stage contexts
+- `context` - Architecture + Phase + Stage contexts only
+- `user` - Just user-written content
+
 #### **`styles/board.css`**
 Design system with CSS variables.
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Item } from '../types';
 import { Button } from './ui/Button';
+import { CopyModeSelector } from './CopyModeSelector';
 
 interface CardProps {
   item: Item;
@@ -38,18 +39,14 @@ export const Card: React.FC<CardProps> = ({ item, onOpen, onDelete, onCopy, onUp
           {item.id}
         </span>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button 
-            variant="icon" 
-            size="sm" 
-            className="h-6 w-6"
-            onClick={(e) => {
-              e.stopPropagation();
-              onCopy?.(item.id, 'full');
-            }}
-            title="Copy with context"
-          >
-            📋
-          </Button>
+          {onCopy && (
+            <CopyModeSelector
+              itemId={item.id}
+              onCopy={(itemId, mode) => {
+                onCopy(itemId, mode);
+              }}
+            />
+          )}
           
           {showDeleteConfirm ? (
             <div className="flex items-center gap-1 bg-surface shadow-lg rounded p-1 absolute right-0 top-0 z-10 border border-destructive">
