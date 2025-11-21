@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Board from './components/Board';
 import { Modal } from './components/ui/Modal';
+import { Button } from './components/ui/Button';
 import { ContextEditor } from './components/ContextEditor';
-import { BoardData, Stage, WebviewMessage, ExtensionMessage, Agent, Item } from './types';
+import { TaskForm, TaskFormData } from './components/TaskForm';
+import { BoardData, Stage, WebviewMessage, ExtensionMessage, Agent, Item, ContextMetadata } from './types';
 
 // @ts-ignore
 const vscode = acquireVsCodeApi();
@@ -17,6 +19,8 @@ const App: React.FC = () => {
     completed: [],
   });
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [contexts, setContexts] = useState<ContextMetadata[]>([]);
+  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [activeContext, setActiveContext] = useState<{
     type: 'stage' | 'phase' | 'agent' | 'context';
     id: string;
@@ -32,6 +36,9 @@ const App: React.FC = () => {
   useEffect(() => {
     // Notify extension that webview is ready
     sendMessage({ type: 'ready' });
+    // Request agents and contexts
+    sendMessage({ type: 'listAgents' });
+    sendMessage({ type: 'listContexts' });
 
     // Listen for messages from extension
     const messageHandler = (event: MessageEvent<ExtensionMessage>) => {
@@ -69,6 +76,11 @@ const App: React.FC = () => {
         case 'agentList':
           console.log('Received agent list:', message.agents);
           setAgents(message.agents);
+          break;
+
+        case 'contextList':
+          console.log('Received context list:', message.contexts);
+          setContexts(message.contexts);
           break;
 
         case 'contextData':
@@ -189,6 +201,13 @@ const App: React.FC = () => {
   return (
     <div className="app">
       <div className="board-controls">
+        <Button
+          variant="primary"
+          size="md"
+          onClick={() => setIsTaskFormOpen(true)}
+        >
+          + Add Task
+        </Button>
         <input
           type="text"
           className="search-input"
@@ -280,6 +299,36 @@ const App: React.FC = () => {
           }}
         />
       )}
+
+      <TaskForm
+        isOpen={isTaskFormOpen}
+        onClose={() => setIsTaskFormOpen(false)}
+        onSubmit={async (data: TaskFormData) => {
+          // Send create message to extension
+          if (data.type === 'task') {
+            sendMessage({
+              type: 'createTask',
+              title: data.title,
+              stage: data.stage,
+              phaseId: data.phaseId,
+              tags: data.tags,
+            });
+          } else {
+            sendMessage({
+              type: 'createPhase',
+              title: data.title,
+              stage: data.stage,
+              tags: data.tags,
+            });
+          }
+        }}
+        agents={agents}
+        contexts={contexts}
+        phases={Object.values(boardData)
+          .flat()
+          .filter(item => item.type === 'phase')
+          .map(item => ({ id: item.id, title: item.title }))}
+      />
 
       {activeContext && (
         <Modal
