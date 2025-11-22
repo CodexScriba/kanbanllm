@@ -123,8 +123,13 @@ export function serializeItem(
   managedContent: string,
   userContent: string
 ): string {
+  // Remove undefined values from frontmatter to prevent js-yaml errors
+  // JSON.stringify removes keys with undefined values, which is exactly what we want
+  // This handles nested objects as well, unlike the previous shallow filter
+  const cleanFrontmatter = JSON.parse(JSON.stringify(frontmatter));
+
   // Build the frontmatter section
-  const frontmatterStr = matter.stringify('', frontmatter);
+  const frontmatterStr = matter.stringify('', cleanFrontmatter);
 
   // Build the complete file content
   const parts = [

@@ -5,7 +5,6 @@ import { Button } from './components/ui/Button';
 import { ContextEditor } from './components/ContextEditor';
 import { TaskForm, TaskFormData } from './components/TaskForm';
 import { ErrorPopup } from './components/ErrorPopup';
-import { ErrorPopup } from './components/ErrorPopup';
 import { ToastContainer, useToast } from './components/Toast';
 import { CheatSheet } from './components/CheatSheet';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -24,7 +23,6 @@ const App: React.FC = () => {
     completed: [],
   });
   const [agents, setAgents] = useState<Agent[]>([]);
-  const [contexts, setContexts] = useState<ContextMetadata[]>([]);
   const [contexts, setContexts] = useState<ContextMetadata[]>([]);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [isCheatSheetOpen, setIsCheatSheetOpen] = useState(false);

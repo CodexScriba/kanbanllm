@@ -15,6 +15,7 @@ KanbanLLM is a VSCode extension that provides a file-based Kanban board for mana
 - Search and filter
 
 ### Phase 2 (M0-M8 Complete)
+- ✅ Keyboard Shortcuts & Cheat Sheet (Phase 3 features now completed)
 - **Stage Alignment**: Canonical stage vocabulary (`chat`, `queue`, `plan`, `code`, `audit`, `completed`)
 - **File Naming**: Stage-prefixed filenames (`{stage}.{id}.md`)
 - **Agent System**: Agent definitions with model/temperature config
@@ -433,7 +434,7 @@ Dropdown selector for choosing copy modes on cards.
 - `context` - Architecture + Phase + Stage contexts only
 - `user` - Just user-written content
 
-#### **`hooks/useKeyboardShortcuts.ts`** ⭐ NEW (Phase 3)
+#### **`hooks/useKeyboardShortcuts.ts`** ✅ Implemented
 Custom hook for keyboard navigation and shortcuts.
 
 **Shortcuts**:
@@ -450,6 +451,15 @@ Custom hook for keyboard navigation and shortcuts.
 - Visual selection indicator (ring)
 - Smart navigation (skips empty spaces if possible)
 - Conflict prevention with input fields
+
+#### **`components/CheatSheet.tsx`** ✅ Implemented
+Modal displaying keyboard shortcuts.
+
+**Features**:
+- Grid layout of shortcuts
+- Keyboard key styling
+- Glassmorphism aesthetic
+- Triggered by `?` key
 
 #### **`styles/board.css`**
 Design system with CSS variables.
