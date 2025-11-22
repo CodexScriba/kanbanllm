@@ -216,12 +216,14 @@ React app entry point.
 Root component. Manages board state and message passing.
 
 **State**:
-- `boardData` - Items grouped by stage
+- `boardData` - Items organized by stage
+- `loading` - Initial load state
 - `activeContext` - Currently editing context
 - `agents` - Available agents
 - `contexts` - Available contexts (Phase 1)
 - `isTaskFormOpen` - Task form modal state (Phase 1)
 - `error` - Error state for ErrorPopup (Phase 1)
+- `toasts` - Toast notifications state (Phase 2)
 - Search/filter state
 
 **Message Handling**:
@@ -231,10 +233,12 @@ Root component. Manages board state and message passing.
 **Keyboard Shortcuts** (Phase 1):
 - `Ctrl+Shift+N` / `Cmd+Shift+N` - Open task creation form
 
-**Features** (Phase 1):
-- Integrated TaskForm for creating tasks/phases
-- Error handling with ErrorPopup
+**Features**:
+- **Phase 1**: TaskForm, ErrorPopup, ContextSelector, AgentDropdown
+- **Phase 2**: Toast notifications, Skeleton loading, TagEditor, CopyModeSelector
 - Auto-fetch agents and contexts on load
+- Toast notifications for all CRUD operations
+- Skeleton loading during initial data fetch
 
 #### **`components/Board.tsx`**
 Renders Kanban columns with horizontal scrolling.
@@ -428,6 +432,24 @@ Dropdown selector for choosing copy modes on cards.
 - `full` - Task + Architecture + Phase + Stage contexts
 - `context` - Architecture + Phase + Stage contexts only
 - `user` - Just user-written content
+
+#### **`hooks/useKeyboardShortcuts.ts`** ⭐ NEW (Phase 3)
+Custom hook for keyboard navigation and shortcuts.
+
+**Shortcuts**:
+- `Ctrl+Shift+N` - Create new task
+- `Ctrl+E` - Edit selected card (opens file)
+- `Delete` - Delete selected card
+- `Enter` - Open selected card
+- `Arrow Keys` - Navigate between cards
+- `Escape` - Clear selection
+- `Ctrl+F` - Focus search
+
+**Features**:
+- Card selection state management
+- Visual selection indicator (ring)
+- Smart navigation (skips empty spaces if possible)
+- Conflict prevention with input fields
 
 #### **`styles/board.css`**
 Design system with CSS variables.

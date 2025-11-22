@@ -4,27 +4,33 @@ import { Card } from './Card';
 import { SkeletonCards } from './SkeletonCard';
 
 interface ColumnProps {
-  config: ColumnConfig;
+  stage: Stage;
+  title: string;
   items: Item[];
   loading?: boolean;
   onMoveItem: (itemId: string, targetStage: Stage) => void;
   onOpenItem: (itemId: string) => void;
   onDeleteItem: (itemId: string) => void;
-  onCopy?: (itemId: string, mode: 'full' | 'context' | 'user') => void;
-  onContextClick?: (contextType: 'agent' | 'context', contextId: string) => void;
-  onUpdate: (item: Item) => void;
+  onCopy: (itemId: string, mode: 'full' | 'context' | 'user') => void;
+  onUpdate: (itemId: string, updates: Partial<Item>) => void;
+  onContextClick: (context: { type: 'stage' | 'phase' | 'agent' | 'context'; id: string; content: string }) => void;
+  selectedCardId?: string | null;
+  onCardClick?: (cardId: string) => void;
 }
 
 export const Column: React.FC<ColumnProps> = ({
-  config,
+  stage,
+  title,
   items,
-  loading = false,
   onMoveItem,
   onOpenItem,
   onDeleteItem,
   onCopy,
   onUpdate,
-  onContextClick
+  onContextClick,
+  loading = false,
+  selectedCardId,
+  onCardClick,
 }) => {
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -41,27 +47,25 @@ export const Column: React.FC<ColumnProps> = ({
     e.currentTarget.classList.remove('bg-surface-hover/50');
     const itemId = e.dataTransfer.getData('text/plain');
     if (itemId) {
-      onMoveItem(itemId, config.id);
+      onMoveItem(itemId, stage);
     }
   };
 
   return (
     <div 
-      className="column glass"
+      className={`column ${loading ? 'loading' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      data-stage={stage}
     >
       <div className="column-header">
         <div className="flex items-center gap-2">
-          <span className="text-lg">{config.icon}</span>
-          <h2 className="font-semibold text-sm uppercase tracking-wider text-text-secondary">
-            {config.title}
-          </h2>
+          <span className="font-medium">{title}</span>
+          <span className="text-xs text-muted-foreground bg-surface-hover px-2 py-0.5 rounded-full">
+            {items.length}
+          </span>
         </div>
-        <span className="text-xs font-medium px-2 py-1 rounded-full bg-surface text-text-muted">
-          {items.length}
-        </span>
       </div>
 
       <div className="column-content custom-scrollbar">
@@ -77,6 +81,8 @@ export const Column: React.FC<ColumnProps> = ({
               onCopy={onCopy}
               onUpdate={onUpdate}
               onContextClick={onContextClick}
+              isSelected={selectedCardId === item.id}
+              onSelect={() => onCardClick?.(item.id)}
             />
           ))
         )}

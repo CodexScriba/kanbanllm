@@ -5,7 +5,10 @@ import { Button } from './components/ui/Button';
 import { ContextEditor } from './components/ContextEditor';
 import { TaskForm, TaskFormData } from './components/TaskForm';
 import { ErrorPopup } from './components/ErrorPopup';
+import { ErrorPopup } from './components/ErrorPopup';
 import { ToastContainer, useToast } from './components/Toast';
+import { CheatSheet } from './components/CheatSheet';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { BoardData, Stage, WebviewMessage, ExtensionMessage, Agent, Item, ContextMetadata } from './types';
 
 // @ts-ignore
@@ -22,7 +25,9 @@ const App: React.FC = () => {
   });
   const [agents, setAgents] = useState<Agent[]>([]);
   const [contexts, setContexts] = useState<ContextMetadata[]>([]);
+  const [contexts, setContexts] = useState<ContextMetadata[]>([]);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
+  const [isCheatSheetOpen, setIsCheatSheetOpen] = useState(false);
   const [activeContext, setActiveContext] = useState<{
     type: 'stage' | 'phase' | 'agent' | 'context';
     id: string;
@@ -36,6 +41,8 @@ const App: React.FC = () => {
   const [sortBy, setSortBy] = useState<'updated' | 'created' | 'title'>('updated');
   const [error, setError] = useState<{ message: string; details?: string } | null>(null);
   const { toasts, showToast, dismissToast } = useToast();
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Notify extension that webview is ready
@@ -115,6 +122,12 @@ const App: React.FC = () => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'N') {
         e.preventDefault();
         setIsTaskFormOpen(true);
+      }
+      
+      // ? to show cheat sheet
+      if (e.key === '?' && !isTaskFormOpen && !activeContext) {
+        e.preventDefault();
+        setIsCheatSheetOpen(true);
       }
     };
 
@@ -227,6 +240,41 @@ const App: React.FC = () => {
 
   const hasFilters = searchQuery || filterTag || filterPhase;
 
+  // Get all filtered items for keyboard navigation
+  const filteredBoardData = {
+    chat: getFilteredItems(boardData.chat),
+    queue: getFilteredItems(boardData.queue),
+    plan: getFilteredItems(boardData.plan),
+    code: getFilteredItems(boardData.code),
+    audit: getFilteredItems(boardData.audit),
+    completed: getFilteredItems(boardData.completed),
+  };
+
+  const allCardIds = [
+    ...filteredBoardData.chat,
+    ...filteredBoardData.queue,
+    ...filteredBoardData.plan,
+    ...filteredBoardData.code,
+    ...filteredBoardData.audit,
+    ...filteredBoardData.completed,
+  ].map(item => item.id);
+
+  useKeyboardShortcuts({
+    onCreateTask: () => setIsTaskFormOpen(true),
+    onEditCard: (cardId) => sendMessage({ type: 'openItem', itemId: cardId }), // Ctrl+E opens file for now
+    onDeleteCard: (cardId) => {
+      if (confirm('Are you sure you want to delete this item?')) {
+        sendMessage({ type: 'deleteItem', itemId: cardId });
+      }
+    },
+    onOpenCard: (cardId) => sendMessage({ type: 'openItem', itemId: cardId }),
+    onFocusSearch: () => searchInputRef.current?.focus(),
+    onClearSelection: () => setSelectedCardId(null),
+    selectedCardId,
+    setSelectedCardId,
+    allCardIds,
+  });
+
   return (
     <div className="app">
       <div className="board-controls">
@@ -243,6 +291,7 @@ const App: React.FC = () => {
           placeholder="Search tasks..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          ref={searchInputRef}
         />
 
         <select
@@ -298,15 +347,10 @@ const App: React.FC = () => {
         </div>
       ) : (
         <Board
-          data={{
-            chat: getFilteredItems(boardData.chat),
-            queue: getFilteredItems(boardData.queue),
-            plan: getFilteredItems(boardData.plan),
-            code: getFilteredItems(boardData.code),
-            audit: getFilteredItems(boardData.audit),
-            completed: getFilteredItems(boardData.completed),
-          }}
+          data={filteredBoardData}
           loading={loading}
+          selectedCardId={selectedCardId}
+          onCardClick={setSelectedCardId}
           onMoveItem={(itemId, targetStage) => {
             sendMessage({ type: 'moveItem', itemId, targetStage });
             showToast({
@@ -331,11 +375,20 @@ const App: React.FC = () => {
               message: `${mode === 'full' ? 'Full context' : mode === 'context' ? 'Context only' : 'User content'} mode`,
             });
           }}
-          onUpdate={(item) => {
-            sendMessage({ type: 'updateItem', item });
+          onUpdate={(itemId, updates) => {
+            const item = Object.values(boardData).flat().find(i => i.id === itemId);
+            if (item) {
+              const updatedItem = { ...item, ...updates };
+              sendMessage({ type: 'updateItem', item: updatedItem });
+              showToast({
+                type: 'info',
+                title: 'Update',
+                message: 'Item updated',
+              });
+            }
           }}
-          onContextClick={(contextType, contextId) => {
-            sendMessage({ type: 'getContext', contextType, contextId });
+          onContextClick={(context) => {
+            setActiveContext(context);
           }}
         />
       )}
@@ -412,6 +465,14 @@ const App: React.FC = () => {
       )}
 
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+
+      <Modal
+        isOpen={isCheatSheetOpen}
+        onClose={() => setIsCheatSheetOpen(false)}
+        title="Keyboard Shortcuts"
+      >
+        <CheatSheet />
+      </Modal>
     </div>
   );
 };

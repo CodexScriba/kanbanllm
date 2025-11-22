@@ -9,34 +9,50 @@ interface BoardProps {
   onOpenItem: (itemId: string) => void;
   onDeleteItem: (itemId: string) => void;
   onCopy: (itemId: string, mode: 'full' | 'context' | 'user') => void;
-  onUpdate: (item: Item) => void;
-  onContextClick?: (contextType: 'agent' | 'context', contextId: string) => void;
+  onUpdate: (itemId: string, updates: Partial<Item>) => void;
+  onContextClick: (context: { type: 'stage' | 'phase' | 'agent' | 'context'; id: string; content: string }) => void;
+  selectedCardId?: string | null;
+  onCardClick?: (cardId: string) => void;
 }
 
-const COLUMNS: ColumnConfig[] = [
-  { id: 'chat', title: 'Chat', icon: '💬', color: '#6366f1' },
-  { id: 'queue', title: 'Queue', icon: '📥', color: '#64748b' },
-  { id: 'plan', title: 'Plan', icon: '📋', color: '#eab308' },
-  { id: 'code', title: 'Code', icon: '💻', color: '#3b82f6' },
-  { id: 'audit', title: 'Audit', icon: '🔍', color: '#a855f7' },
-  { id: 'completed', title: 'Done', icon: '✅', color: '#22c55e' },
+const COLUMNS: { id: Stage; title: string }[] = [
+  { id: 'chat', title: 'Chat' },
+  { id: 'queue', title: 'Queue' },
+  { id: 'plan', title: 'Plan' },
+  { id: 'code', title: 'Code' },
+  { id: 'audit', title: 'Audit' },
+  { id: 'completed', title: 'Completed' },
 ];
 
-const Board: React.FC<BoardProps> = ({ data, loading = false, onMoveItem, onOpenItem, onDeleteItem, onCopy, onUpdate, onContextClick }) => {
+const Board: React.FC<BoardProps> = ({
+  data,
+  onMoveItem,
+  onOpenItem,
+  onDeleteItem,
+  onCopy,
+  onUpdate,
+  onContextClick,
+  loading = false,
+  selectedCardId,
+  onCardClick,
+}) => {
   return (
-    <div className="board-container">
-      {COLUMNS.map(col => (
+    <div className="board">
+      {COLUMNS.map(column => (
         <Column
-          key={col.id}
-          config={col}
-          items={data[col.id] || []}
-          loading={loading}
+          key={column.id}
+          stage={column.id}
+          title={column.title}
+          items={data[column.id]}
           onMoveItem={onMoveItem}
           onOpenItem={onOpenItem}
           onDeleteItem={onDeleteItem}
           onCopy={onCopy}
           onUpdate={onUpdate}
           onContextClick={onContextClick}
+          loading={loading}
+          selectedCardId={selectedCardId}
+          onCardClick={onCardClick}
         />
       ))}
     </div>

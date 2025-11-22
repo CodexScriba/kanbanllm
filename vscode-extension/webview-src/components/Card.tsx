@@ -8,11 +8,22 @@ interface CardProps {
   onOpen: (id: string) => void;
   onDelete: (id: string) => void;
   onCopy?: (id: string, mode: 'full' | 'context' | 'user') => void;
-  onUpdate?: (item: Item) => void;
-  onContextClick?: (contextType: 'agent' | 'context', contextId: string) => void;
+  onUpdate?: (itemId: string, updates: Partial<Item>) => void;
+  onContextClick?: (context: { type: 'stage' | 'phase' | 'agent' | 'context'; id: string; content: string }) => void;
+  isSelected?: boolean;
+  onSelect?: () => void;
 }
 
-export const Card: React.FC<CardProps> = ({ item, onOpen, onDelete, onCopy, onUpdate, onContextClick }) => {
+export const Card: React.FC<CardProps> = ({ 
+  item, 
+  onOpen, 
+  onDelete, 
+  onCopy, 
+  onUpdate, 
+  onContextClick,
+  isSelected,
+  onSelect
+}) => {
   const [isEditing, setIsEditing] = React.useState(false);
   const [editTitle, setEditTitle] = React.useState(item.title);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
@@ -20,6 +31,12 @@ export const Card: React.FC<CardProps> = ({ item, onOpen, onDelete, onCopy, onUp
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData('text/plain', item.id);
     e.dataTransfer.effectAllowed = 'move';
+    // Add dragging class
+    e.currentTarget.classList.add('dragging');
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    e.currentTarget.classList.remove('dragging');
   };
 
   const getIcon = () => {
@@ -29,15 +46,26 @@ export const Card: React.FC<CardProps> = ({ item, onOpen, onDelete, onCopy, onUp
 
   return (
     <div 
-      className="card group"
+      className={`card group ${isSelected ? 'selected ring-2 ring-primary' : ''}`}
       draggable
       onDragStart={handleDragStart}
-      onClick={() => onOpen(item.id)}
+      onDragEnd={handleDragEnd}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect?.();
+      }}
+      data-card-id={item.id}
+      tabIndex={0}
     >
       <div className="card-header">
         <span className="text-xs font-medium text-muted-foreground opacity-70">
           {item.id}
         </span>
+        {item.phaseId && (
+          <span className="phase-badge" title={`Phase: ${item.phaseId}`}>
+            📦 {item.phaseId}
+          </span>
+        )}
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           {onCopy && (
             <CopyModeSelector
@@ -101,7 +129,9 @@ export const Card: React.FC<CardProps> = ({ item, onOpen, onDelete, onCopy, onUp
             autoFocus
             onKeyDown={e => {
               if (e.key === 'Enter') {
-                onUpdate?.({ ...item, title: editTitle });
+                if (editTitle !== item.title) {
+                  onUpdate?.(item.id, { title: editTitle });
+                }
                 setIsEditing(false);
               } else if (e.key === 'Escape') {
                 setEditTitle(item.title);
@@ -109,7 +139,9 @@ export const Card: React.FC<CardProps> = ({ item, onOpen, onDelete, onCopy, onUp
               }
             }}
             onBlur={() => {
-              setEditTitle(item.title);
+              if (editTitle !== item.title) {
+                onUpdate?.(item.id, { title: editTitle });
+              }
               setIsEditing(false);
             }}
           />
@@ -133,10 +165,12 @@ export const Card: React.FC<CardProps> = ({ item, onOpen, onDelete, onCopy, onUp
       <div className="card-meta flex-wrap">
         {item.agent && (
           <span 
-            className="tag bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 cursor-pointer hover:bg-indigo-500/30 transition-colors"
+            className="tag agent-tag"
             onClick={(e) => {
               e.stopPropagation();
-              onContextClick?.('agent', item.agent!);
+              if (item.agent) {
+                onContextClick?.({ type: 'agent', id: item.agent, content: '' });
+              }
             }}
             title="Click to edit agent"
           >
@@ -151,7 +185,7 @@ export const Card: React.FC<CardProps> = ({ item, onOpen, onDelete, onCopy, onUp
                 className="tag bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 cursor-pointer hover:bg-emerald-500/30 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onContextClick?.('context', ctx);
+                  onContextClick?.({ type: 'context', id: ctx, content: '' });
                 }}
                 title={`Click to edit context: ${ctx}`}
               >
@@ -169,11 +203,6 @@ export const Card: React.FC<CardProps> = ({ item, onOpen, onDelete, onCopy, onUp
       
       <div className="mt-3 flex justify-between items-center text-xs text-muted">
         <span>{new Date(item.updated).toLocaleDateString()}</span>
-        {item.phaseId && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-hover">
-            {item.phaseId}
-          </span>
-        )}
       </div>
     </div>
   );
